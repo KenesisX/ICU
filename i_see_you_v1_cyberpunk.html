@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>I SEE YOU - STRIKEBACK Command Center</title>
+<style>
+:root {
+  /* OPTION 1: CYBERPUNK NEON */
+  --primary: #0a0e27;
+  --secondary: #1a1f3a;
+  --accent: #00d9ff;
+  --accent2: #ff006e;
+  --danger: #ff0055;
+  --gold: #ffd700;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  
+  /* Alternative palettes (uncomment to switch) */
+  /* OPTION 2: DRACONIAN RED
+  --primary: #0d0605;
+  --secondary: #2a1a15;
+  --accent: #ff1744;
+  --accent2: #ffeb3b;
+  --danger: #c41c3b;
+  --gold: #ff6f00;
+  --text-primary: #ffffff;
+  --text-secondary: #d4af37;
+  */
+  
+  /* OPTION 3: DARK SLATE TECH
+  --primary: #0f1419;
+  --secondary: #1a2332;
+  --accent: #4dffff;
+  --accent2: #ff1493;
+  --danger: #ff0000;
+  --gold: #20b2aa;
+  --text-primary: #e0e0e0;
+  --text-secondary: #808080;
+  */
+}
+
+* { box-sizing: border-box; }
+html, body { 
+  margin: 0; padding: 0; width: 100%; height: 100%; 
+  background: var(--primary); 
+  font-family: 'Courier New', monospace;
+  color: var(--text-primary); 
+  overflow: hidden;
+  letter-spacing: 0.5px;
+}
+
+/* CODE RAIN BACKGROUND */
+#code-rain {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  opacity: 0.03;
+  pointer-events: none;
+}
+
+body::before {
+  content: ''; 
+  position: fixed; 
+  top: 0; left: 0; 
+  width: 100%; height: 100%;
+  background: repeating-linear-gradient(
+    0deg, 
+    rgba(0, 217, 255, 0.01) 0px, 
+    transparent 3px
+  );
+  pointer-events: none; 
+  z-index: 1;
+}
+
+#container { 
+  display: flex; 
+  flex-direction: column; 
+  width: 100vw; 
+  height: 100vh;
+  position: relative;
+  z-index: 10;
+}
+
+/* HEADER */
+#header {
+  background: linear-gradient(135deg, rgba(10,14,39,0.98) 0%, rgba(26,31,58,0.98) 100%);
+  border-bottom: 3px solid var(--accent);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  box-shadow: 0 8px 32px rgba(0, 217, 255, 0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+  position: relative;
+}
+
+#header h1 { 
+  margin: 0; 
+  font-size: 1.5em; 
+  color: var(--text-primary); 
+  text-shadow: 0 0 20px var(--accent), 0 2px 4px rgba(0,0,0,0.8); 
+  letter-spacing: 3px;
+  animation: titleFlicker 3s ease-in-out infinite;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+#header .strikeback {
+  position: absolute;
+  bottom: 4px;
+  right: 16px;
+  font-size: 0.6em;
+  color: var(--accent2);
+  text-shadow: 0 0 10px var(--accent2);
+  letter-spacing: 2px;
+  font-weight: 700;
+  opacity: 0.8;
+}
+
+@keyframes titleFlicker {
+  0%, 100% { 
+    text-shadow: 0 0 20px var(--accent), 0 2px 4px rgba(0,0,0,0.8);
+    opacity: 1;
+  }
+  50% { 
+    text-shadow: 0 0 30px var(--accent), 0 0 10px var(--accent2), 0 2px 4px rgba(0,0,0,0.9);
+    opacity: 0.95;
+  }
+}
+
+.status-indicator { 
+  display: flex; 
+  gap: 8px; 
+  font-size: 0.75em; 
+  align-items: center;
+  animation: fadeInOut 2s ease-in-out infinite;
+}
+
+.status-dot { 
+  width: 10px; 
+  height: 10px; 
+  border-radius: 2px; 
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent), inset 0 0 8px rgba(255,255,255,0.4);
+  animation: neonPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes neonPulse {
+  0%, 100% { 
+    opacity: 1;
+    box-shadow: 0 0 12px var(--accent), inset 0 0 8px rgba(255,255,255,0.4);
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7;
+    box-shadow: 0 0 20px var(--accent), inset 0 0 12px rgba(255,255,255,0.6);
+    transform: scale(1.15);
+  }
+}
+
+/* TAB NAVIGATION - IMPROVED MENU */
+#tab-nav {
+  display: flex;
+  gap: 0;
+  background: linear-gradient(90deg, rgba(26,31,58,0.9) 0%, rgba(10,14,39,0.9) 100%);
+  padding: 0;
+  margin: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  border-bottom: 2px solid var(--accent2);
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  box-shadow: inset 0 -1px 0 rgba(0, 217, 255, 0.1);
+}
+
+.tab-btn {
+  flex-shrink: 0;
+  padding: 13px 16px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.72em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+  position: relative;
+  font-family: 'Courier New', monospace;
+}
+
+.tab-btn::before {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  transition: width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+.tab-btn:hover {
+  background: rgba(0, 217, 255, 0.05);
+  color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.tab-btn.active {
+  background: rgba(0, 217, 255, 0.1);
+  color: var(--accent);
+  text-shadow: 0 0 10px var(--accent);
+}
+
+.tab-btn.active::before {
+  width: 100%;
+  box-shadow: 0 0 15px var(--accent);
+}
+
+/* CONTENT AREA */
+#content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--primary);
+  padding: 0;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+.page { 
+  display: none; 
+  padding: 16px;
+  animation: pageSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes pageSlideIn {
+  from { 
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page.active { display: block; }
+
+/* CARD STYLING */
+.card {
+  background: linear-gradient(135deg, rgba(26,31,58,0.6) 0%, rgba(10,14,39,0.8) 100%);
+  border: 1.5px solid var(--accent);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  backdrop-filter: blur(5px);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(0, 217, 255, 0.1), inset 0 0 20px rgba(0, 217, 255, 0.02);
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(0, 217, 255, 0) 0%, rgba(0, 217, 255, 0.03) 100%);
+  pointer-events: none;
+}
+
+.card:hover {
+  border-color: var(--accent2);
+  box-shadow: 0 0 20px rgba(0, 217, 255, 0.2), inset 0 0 20px rgba(0, 217, 255, 0.05);
+}
+
+.card:active { 
+  transform: scale(0.98);
+}
+
+.card.highlight { 
+  border-color: var(--accent2); 
+  box-shadow: 0 0 30px rgba(255, 0, 110, 0.3), inset 0 0 10px rgba(255, 0, 110, 0.1);
+  background: linear-gradient(135deg, rgba(255, 0, 110, 0.05) 0%, rgba(26, 31, 58, 0.8) 100%);
+  animation: highlightPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes highlightPulse {
+  0%, 100% { box-shadow: 0 0 30px rgba(255, 0, 110, 0.3), inset 0 0 10px rgba(255, 0, 110, 0.1); }
+  50% { box-shadow: 0 0 40px rgba(255, 0, 110, 0.4), inset 0 0 15px rgba(255, 0, 110, 0.15); }
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 217, 255, 0.2);
+  position: relative;
+  z-index: 2;
+}
+
+.card-title { 
+  font-size: 1.05em; 
+  font-weight: 900; 
+  color: var(--accent);
+  text-shadow: 0 0 10px rgba(0, 217, 255, 0.4);
+  letter-spacing: 1px;
+}
+
+.card-subtitle { 
+  font-size: 0.75em; 
+  color: var(--text-secondary); 
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 0.85em;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.info-row:hover {
+  transform: translateX(2px);
+  color: var(--accent);
+}
+
+.info-label { color: var(--text-secondary); }
+.info-value { 
+  color: var(--accent); 
+  font-weight: 700;
+  text-shadow: 0 0 6px rgba(0, 217, 255, 0.3);
+}
+
+.status-badge {
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.65em;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+}
+
+.status-badge:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 12px rgba(0,0,0,0.5);
+}
+
+.status-active { 
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: var(--primary);
+  font-weight: 900;
+}
+
+.status-pending { 
+  background: var(--secondary); 
+  color: var(--text-secondary);
+}
+
+.status-danger { 
+  background: linear-gradient(135deg, var(--danger), #ff3366);
+  color: var(--text-primary);
+  animation: dangerPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes dangerPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(255,0,85,0.3); }
+  50% { box-shadow: 0 0 16px rgba(255,0,85,0.6); }
+}
+
+/* BUTTONS */
+.btn {
+  padding: 11px 14px;
+  border: 1.5px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  border-radius: 6px;
+  font-size: 0.72em;
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  margin-bottom: 8px;
+  width: 100%;
+  letter-spacing: 1.5px;
+  font-family: 'Courier New', monospace;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 217, 255, 0.15);
+  transition: left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: -1;
+}
+
+.btn:hover::before {
+  left: 0;
+}
+
+.btn:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent2);
+  box-shadow: 0 0 15px rgba(0, 217, 255, 0.3);
+}
+
+.btn:active { 
+  transform: translateY(-1px);
+}
+
+.btn-primary { 
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: var(--primary);
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(0, 217, 255, 0.2);
+  font-weight: 900;
+}
+
+.btn-primary:hover { 
+  box-shadow: 0 0 20px rgba(0, 217, 255, 0.4), 0 0 10px rgba(255, 0, 110, 0.2);
+}
+
+.btn-danger { 
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: rgba(255, 0, 85, 0.1);
+  box-shadow: 0 0 12px rgba(255, 0, 85, 0.3);
+}
+
+.btn-success { 
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-success:hover {
+  background: rgba(0, 217, 255, 0.1);
+  box-shadow: 0 0 12px rgba(0, 217, 255, 0.3);
+}
+
+.btn-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* FORMS */
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.8em;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 6px rgba(0, 217, 255, 0.2);
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: 11px;
+  background: linear-gradient(135deg, rgba(26,31,58,0.8), rgba(10,14,39,0.9));
+  border: 1.5px solid var(--accent);
+  color: var(--text-primary);
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  letter-spacing: 0.5px;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--accent2);
+  box-shadow: 0 0 20px rgba(0, 217, 255, 0.3), inset 0 0 8px rgba(0, 217, 255, 0.05);
+  background: linear-gradient(135deg, rgba(26,31,58,0.9), rgba(10,14,39,1));
+  transform: translateY(-2px);
+}
+
+textarea { 
+  resize: vertical; 
+  min-height: 80px;
+}
+
+/* LIST ITEMS */
+.list-item {
+  background: linear-gradient(135deg, rgba(26,31,58,0.5), rgba(10,14,39,0.7));
+  border-left: 4px solid var(--accent);
+  padding: 11px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  backdrop-filter: blur(5px);
+}
+
+.list-item:hover {
+  border-left-color: var(--accent2);
+  background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(26,31,58,0.6));
+  transform: translateX(4px);
+  box-shadow: 0 0 15px rgba(0, 217, 255, 0.2);
+}
+
+.list-item-title { 
+  font-weight: 700; 
+  color: var(--accent); 
+  font-size: 0.9em;
+  margin-bottom: 3px;
+  letter-spacing: 0.5px;
+}
+
+.list-item-text { 
+  color: var(--text-secondary); 
+  font-size: 0.8em;
+}
+
+.list-item-status { 
+  font-size: 0.75em; 
+  color: var(--text-secondary);
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
+/* SEVERITY INDICATORS */
+.severity-critical { 
+  color: var(--danger);
+  text-shadow: 0 0 8px rgba(255, 0, 85, 0.4);
+  font-weight: 700;
+}
+
+.severity-high { 
+  color: var(--accent2);
+  text-shadow: 0 0 6px rgba(255, 0, 110, 0.3);
+  font-weight: 700;
+}
+
+.severity-medium { 
+  color: var(--accent);
+  text-shadow: 0 0 6px rgba(0, 217, 255, 0.2);
+  font-weight: 700;
+}
+
+.severity-low { 
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgba(0, 217, 255, 0.05); }
+::-webkit-scrollbar-thumb { 
+  background: linear-gradient(180deg, var(--accent), var(--accent2));
+  border-radius: 4px;
+  box-shadow: 0 0 6px rgba(0, 217, 255, 0.2);
+}
+::-webkit-scrollbar-thumb:hover { 
+  background: linear-gradient(180deg, var(--accent2), var(--accent));
+  box-shadow: 0 0 12px rgba(0, 217, 255, 0.4);
+}
+
+/* MODAL */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 14, 39, 0.95);
+  z-index: 2000;
+  align-items: flex-end;
+  animation: modalFadeIn 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal.active { display: flex; }
+
+.modal-content {
+  background: linear-gradient(135deg, rgba(10,14,39,0.98), rgba(26,31,58,0.8));
+  border-top: 3px solid var(--accent);
+  padding: 16px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(0, 217, 255, 0.1);
+  backdrop-filter: blur(10px);
+  animation: slideUpSmooth 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideUpSmooth {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-close {
+  float: right;
+  font-size: 2em;
+  color: var(--accent);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  transform: rotate(90deg) scale(1.1);
+  text-shadow: 0 0 12px rgba(0, 217, 255, 0.5);
+}
+
+.modal-title { 
+  color: var(--accent); 
+  font-size: 1.3em; 
+  font-weight: 900; 
+  margin-bottom: 12px; 
+  clear: both;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
+}
+
+/* ALERTS */
+.alert {
+  background: linear-gradient(135deg, rgba(255, 0, 85, 0.08), rgba(26, 31, 58, 0.1));
+  border-left: 4px solid var(--danger);
+  padding: 11px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 0.85em;
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+}
+
+.alert:hover {
+  background: linear-gradient(135deg, rgba(255, 0, 85, 0.12), rgba(26, 31, 58, 0.15));
+  box-shadow: 0 0 15px rgba(255, 0, 85, 0.15);
+}
+
+.alert-warning {
+  background: linear-gradient(135deg, rgba(0, 217, 255, 0.08), rgba(26, 31, 58, 0.1));
+  border-left-color: var(--accent);
+}
+
+.alert-warning:hover {
+  background: linear-gradient(135deg, rgba(0, 217, 255, 0.12), rgba(26, 31, 58, 0.15));
+  box-shadow: 0 0 15px rgba(0, 217, 255, 0.15);
+}
+
+/* SPRITE AREA - ANIME/DRACONIAN STYLE */
+.sprite-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin: 16px 0;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(0, 217, 255, 0.05), rgba(26, 31, 58, 0.3));
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  gap: 20px;
+}
+
+.sprite {
+  font-size: 1.8em;
+  line-height: 1;
+  animation: dracFlutter 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px rgba(0, 217, 255, 0.3));
+  font-weight: 700;
+  text-shadow: 0 0 10px var(--accent);
+}
+
+.sprite:nth-child(1) { animation-delay: 0s; }
+.sprite:nth-child(2) { animation-delay: 0.5s; }
+.sprite:nth-child(3) { animation-delay: 1s; }
+
+@keyframes dracFlutter {
+  0%, 100% { transform: translateY(0px) rotateZ(0deg); }
+  25% { transform: translateY(-4px) rotateZ(-2deg); }
+  50% { transform: translateY(-8px) rotateZ(0deg); }
+  75% { transform: translateY(-4px) rotateZ(2deg); }
+}
+
+.mt-16 { margin-top: 16px; }
+.mb-12 { margin-bottom: 12px; }
+.p-12 { padding: 12px; }
+
+h2 {
+  color: var(--accent);
+  text-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
+  letter-spacing: 1px;
+}
+</style>
+</head>
+<body>
+
+<canvas id="code-rain"></canvas>
+
+<div id="container">
+  
+  <!-- HEADER -->
+  <div id="header">
+    <h1>⚡ I SEE YOU<span class="strikeback">/ STRIKEBACK</span></h1>
+    <div class="status-indicator">
+      <div class="status-dot"></div>
+      <span>ONLINE</span>
+    </div>
+  </div>
+
+  <!-- TAB NAVIGATION -->
+  <div id="tab-nav">
+    <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
+    <button class="tab-btn" data-tab="engagements">📅 Engagements</button>
+    <button class="tab-btn" data-tab="operations">⚙️ Ops</button>
+    <button class="tab-btn" data-tab="findings">🎯 Findings</button>
+    <button class="tab-btn" data-tab="nodes">🖧 Nodes</button>
+    <button class="tab-btn" data-tab="reporting">📈 Reports</button>
+    <button class="tab-btn" data-tab="compliance">🔒 Auth</button>
+  </div>
+
+  <!-- CONTENT AREA -->
+  <div id="content">
+
+    <!-- DASHBOARD PAGE -->
+    <div id="dashboard" class="page active">
+      <h2>⚡ SYSTEM STATUS</h2>
+
+      <div class="sprite-container">
+        <span class="sprite">⟪◆⟫</span>
+        <span class="sprite">◈━◈</span>
+        <span class="sprite">⬢⚡⬢</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Active Engagement</div>
+            <div class="card-subtitle">Acme Corporation</div>
+          </div>
+          <span class="status-badge status-active">LIVE</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Status:</span>
+          <span class="info-value">72% COMPLETE</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Scope:</span>
+          <span class="info-value">192.168.1.0/24</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">ROE:</span>
+          <span class="info-value">✓ SIGNED</span>
+        </div>
+        <button class="btn btn-primary" onclick="switchTab('engagements')">VIEW DETAILS</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Scope Verification</div>
+          </div>
+          <span class="status-badge status-active">✓ VERIFIED</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Hosts Authorized:</span>
+          <span class="info-value">24</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Blocked Attempts:</span>
+          <span class="info-value" style="color: var(--accent);">0</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Last Verified:</span>
+          <span class="info-value">1 MIN AGO</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Findings Overview</div>
+          </div>
+          <span class="status-badge status-pending">TOTAL: 24</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label"><span class="severity-critical">⬢ CRITICAL</span></span>
+          <span class="info-value">3</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label"><span class="severity-high">⬢ HIGH</span></span>
+          <span class="info-value">7</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label"><span class="severity-medium">⬢ MEDIUM</span></span>
+          <span class="info-value">8</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label"><span class="severity-low">⬢ LOW</span></span>
+          <span class="info-value">6</span>
+        </div>
+        <button class="btn btn-primary" onclick="switchTab('findings')">VIEW ALL</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Node Network</div>
+          </div>
+          <span class="status-badge status-active">5 ONLINE</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">ESP32 Lab-1:</span>
+          <span class="info-value">⬢ ACTIVE</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">RPi Scanner-1:</span>
+          <span class="info-value">⬢ ACTIVE</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Jetson GPU:</span>
+          <span class="info-value">⬢ ACTIVE</span>
+        </div>
+        <button class="btn btn-primary" onclick="switchTab('nodes')">MANAGE</button>
+      </div>
+
+      <div class="alert alert-warning mt-16">
+        ⚠ Alert: Target IDS triggered on 192.168.1.50. Logged. No scope violation.
+      </div>
+    </div>
+
+    <!-- ENGAGEMENTS PAGE -->
+    <div id="engagements" class="page">
+      <h2>📅 ENGAGEMENTS</h2>
+
+      <div class="sprite-container">
+        <span class="sprite">◈▓◈</span>
+        <span class="sprite">⟪━⟫</span>
+        <span class="sprite">⬡▸⬡</span>
+      </div>
+
+      <button class="btn btn-success" onclick="openModal('new-engagement')">⊕ NEW</button>
+
+      <div class="card highlight">
+        <div class="card-header">
+          <div>
+            <div class="card-title">ACME CORP PENTEST</div>
+            <div class="card-subtitle">Client Assessment</div>
+          </div>
+          <span class="status-badge status-active">ACTIVE</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Start:</span>
+          <span class="info-value">2024-09-22</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">End:</span>
+          <span class="info-value">2024-10-06</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Scope:</span>
+          <span class="info-value">192.168.1.0/24</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">ROE:</span>
+          <span class="info-value">✓ SIGNED</span>
+        </div>
+        <div class="btn-grid">
+          <button class="btn btn-primary" onclick="openModal('engagement-detail')">VIEW</button>
+          <button class="btn btn-danger">EDIT</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">FINANCIAL AUDIT</div>
+            <div class="card-subtitle">Bank Assessment</div>
+          </div>
+          <span class="status-badge status-active">ACTIVE</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Progress:</span>
+          <span class="info-value">45%</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Scope:</span>
+          <span class="info-value">10.0.0.0/16</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Findings:</span>
+          <span class="info-value">12</span>
+        </div>
+        <button class="btn btn-primary">VIEW DETAILS</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">GOV. ASSESSMENT</div>
+            <div class="card-subtitle">Federal Audit</div>
+          </div>
+          <span class="status-badge status-pending">SCHEDULED</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Start Date:</span>
+          <span class="info-value">2024-10-15</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Scope:</span>
+          <span class="info-value">172.16.0.0/12</span>
+        </div>
+        <button class="btn btn-primary">VIEW DETAILS</button>
+      </div>
+    </div>
+
+    <!-- OPERATIONS PAGE -->
+    <div id="operations" class="page">
+      <h2>⚙️ TOOL OPS</h2>
+
+      <div class="sprite-container">
+        <span class="sprite">⟪⚡⟫</span>
+        <span class="sprite">◈━━◈</span>
+        <span class="sprite">⬢⚙⬢</span>
+      </div>
+
+      <div class="alert">
+        ✓ All tools are scope-limited. Out-of-scope ops = BLOCKED.
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Available Tools</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="list-item-title">🔍 NMAP</div>
+          <div class="list-item-text">Network reconnaissance & port scanning</div>
+          <button class="btn btn-success" style="margin-top: 8px;">DEPLOY</button>
+        </div>
+        <div class="list-item">
+          <div class="list-item-title">🔓 SQLMAP</div>
+          <div class="list-item-text">SQL injection vulnerability testing</div>
+          <button class="btn btn-success" style="margin-top: 8px;">DEPLOY</button>
+        </div>
+        <div class="list-item">
+          <div class="list-item-title">🔐 HASHCAT</div>
+          <div class="list-item-text">GPU-accelerated password cracking</div>
+          <button class="btn btn-success" style="margin-top: 8px;">DEPLOY</button>
+        </div>
+        <div class="list-item">
+          <div class="list-item-title">🌐 BURP</div>
+          <div class="list-item-text">Web application security testing</div>
+          <button class="btn btn-success" style="margin-top: 8px;">DEPLOY</button>
+        </div>
+      </div>
+
+      <div class="card mt-16">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Deploy Options</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target</label>
+          <input type="text" placeholder="192.168.1.50 or 192.168.1.0/24">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tool</label>
+          <select>
+            <option>SELECT...</option>
+            <option>Nmap</option>
+            <option>SQLMap</option>
+            <option>Hashcat</option>
+            <option>Hydra</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Node</label>
+          <select>
+            <option>Auto-select</option>
+            <option>ESP32 Lab-1</option>
+            <option>RPi Scanner-1</option>
+            <option>Jetson GPU</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="alert('Executing...')">▶ EXECUTE</button>
+        <button class="btn btn-danger">⚠ RISK CHECK</button>
+      </div>
+    </div>
+
+    <!-- FINDINGS PAGE -->
+    <div id="findings" class="page">
+      <h2>🎯 FINDINGS</h2>
+
+      <div class="sprite-container">
+        <span class="sprite">⬢▸◈</span>
+        <span class="sprite">◈━▸◈</span>
+        <span class="sprite">⟪⚠⟫</span>
+      </div>
+
+      <button class="btn btn-success" onclick="openModal('add-finding')">⊕ ADD</button>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="severity-critical">⬢ SQL INJECTION</span></div>
+            <div class="card-subtitle">192.168.1.5:80</div>
+          </div>
+          <span class="status-badge status-danger">CRITICAL</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">CVSS:</span>
+          <span class="severity-critical">9.8</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Tool:</span>
+          <span class="info-value">SQLMAP</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Status:</span>
+          <span class="info-value">OPEN</span>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('finding-detail')">VIEW</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="severity-high">⬢ WEAK SSH</span></div>
+            <div class="card-subtitle">192.168.1.15:22</div>
+          </div>
+          <span class="status-badge" style="background: linear-gradient(135deg, var(--accent2), #ff3366); color: var(--primary);">HIGH</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Issue:</span>
+          <span class="info-value">DEFAULT CREDS</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Status:</span>
+          <span class="info-value">OPEN</span>
+        </div>
+        <button class="btn btn-primary">VIEW</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="severity-medium">⬢ UNPATCHED SERVICE</span></div>
+            <div class="card-subtitle">192.168.1.20</div>
+          </div>
+          <span class="status-badge" style="background: var(--accent); color: var(--primary);">MEDIUM</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">CVE:</span>
+          <span class="info-value">CVE-2023-XXXXX</span>
+        </div>
+        <button class="btn btn-primary">VIEW</button>
+      </div>
+    </div>
+
+    <!-- NODES PAGE -->
+    <div id="nodes" class="page">
+      <h2>🖧 LAB NODES</h2>
+
+      <div class="sprite-container">
+        <span class="sprite">⟪◈⟫</span>
+        <span class="sprite">⬢▓⬢</span>
+        <span class="sprite">◈━━◈</span>
+      </div>
+
+      <button class="btn btn-success" onclick="openModal('add-node')">⊕ ADD NODE</button>
+
+      <div class="card highlight">
+        <div class="card-header">
+          <div>
+            <div class="card-title">ESP32 LAB-1</div>
+            <div class="card-subtitle">Wireless Specialist</div>
+          </div>
+          <span class="status-badge status-active">⬢ ONLINE</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">IP:</span>
+          <span class="info-value">192.168.1.50</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Capabilities:</span>
+          <span class="info-value">WiFi, BLE, SDR</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">CPU Load:</span>
+          <span class="info-value">34%</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Memory:</span>
+          <span class="info-value">2.1GB / 4GB</span>
+        </div>
+        <div class="btn-grid">
+          <button class="btn btn-primary">MANAGE</button>
+          <button class="btn btn-danger">RESTART</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">RPI SCANNER-1</div>
+            <div class="card-subtitle">Scanning Node</div>
+          </div>
+          <span class="status-badge status-active">⬢ ONLINE</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">IP:</span>
+          <span class="info-value">192.168.1.60</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Tools:</span>
+          <span class="info-value">Nmap, Hydra, Masscan</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Uptime:</span>
+          <span class="info-value">47h 23m</span>
+        </div>
+        <button class="btn btn-primary">MANAGE</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">JETSON GPU</div>
+            <div class="card-subtitle">Compute Cluster</div>
+          </div>
+          <span class="status-badge status-active">⬢ ONLINE</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">IP:</span>
+          <span class="info-value">10.0.0.5</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">GPU:</span>
+          <span class="info-value">RTX 3060</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Task:</span>
+          <span class="info-value">Hashcat Running</span>
+        </div>
+        <button class="btn btn-primary">MANAGE</button>
+      </div>
+    </div>
+
+    <!-- REPORTING PAGE -->
+    <div id="reporting" class="page">
+      <h2>📈 REPORTS</h2>
+
+      <div class="sprite-container">
+        <span class="sprite">⬢━⬢</span>
+        <span class="sprite">◈▸▸◈</span>
+        <span class="sprite">⟪✨⟫</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Generate Report</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select>
+            <option>Executive Summary</option>
+            <option>Technical Findings</option>
+            <option>CVSS Risk Matrix</option>
+            <option>Remediation Guide</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Engagement</label>
+          <select>
+            <option>Acme Corp Pentest</option>
+            <option>Financial Audit</option>
+            <option>Gov. Assessment</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Format</label>
+          <select>
+            <option>PDF</option>
+            <option>DOCX</option>
+            <option>JSON</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="alert('Generating...')">⟶ GENERATE</button>
+      </div>
+
+      <div class="card mt-16">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Recent Reports</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="list-item-title">ACME CORP - TECHNICAL</div>
+          <div class="list-item-status">Generated: 2024-09-22 | 2.4 MB</div>
+          <button class="btn btn-success" style="margin-top: 6px; font-size: 0.7em;">📥 DOWNLOAD</button>
+        </div>
+        <div class="list-item">
+          <div class="list-item-title">ACME CORP - EXECUTIVE</div>
+          <div class="list-item-status">Generated: 2024-09-21 | 1.2 MB</div>
+          <button class="btn btn-success" style="margin-top: 6px; font-size: 0.7em;">📥 DOWNLOAD</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPLIANCE PAGE -->
+    <div id="compliance" class="page">
+      <h2>🔒 AUTH & COMPLIANCE</h2>
+
+      <div class="sprite-container">
+        <span class="sprite">⟪🛡⟫</span>
+        <span class="sprite">⬢✓⬢</span>
+        <span class="sprite">◈━◈</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Authorization</div>
+          </div>
+          <span class="status-badge status-active">✓ AUTHORIZED</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Engagement:</span>
+          <span class="info-value">Acme Corp</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">ROE Signed:</span>
+          <span class="info-value">✓ 2024-09-22</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Valid Until:</span>
+          <span class="info-value">2024-10-06</span>
+        </div>
+        <button class="btn btn-primary">VIEW ROE</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Scope Verification</div>
+          </div>
+          <span class="status-badge status-active">✓ VERIFIED</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Last Verified:</span>
+          <span class="info-value">2 MINUTES AGO</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Authorized Hosts:</span>
+          <span class="info-value">24</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Blocked Attempts:</span>
+          <span class="info-value">0</span>
+        </div>
+        <button class="btn btn-success">RE-VERIFY</button>
+      </div>
+
+      <div class="card mt-16">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Audit Log</div>
+            <div class="card-subtitle">Recent Activity</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="list-item-title">TOOL EXECUTED: NMAP</div>
+          <div class="list-item-status">2024-09-22 14:35 | ✓ Authorized</div>
+        </div>
+        <div class="list-item">
+          <div class="list-item-title">SCOPE VERIFIED</div>
+          <div class="list-item-status">2024-09-22 14:30 | PASSED</div>
+        </div>
+        <div class="list-item">
+          <div class="list-item-title">FINDING DOCUMENTED</div>
+          <div class="list-item-status">2024-09-22 14:50 | CRITICAL</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- MODALS -->
+
+<div id="new-engagement" class="modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-title">CREATE ENGAGEMENT</div>
+    <div class="form-group">
+      <label class="form-label">Client</label>
+      <input type="text" placeholder="Company Name">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Scope (CIDR)</label>
+      <textarea placeholder="192.168.1.0/24"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Start Date</label>
+      <input type="date">
+    </div>
+    <div class="form-group">
+      <label class="form-label">End Date</label>
+      <input type="date">
+    </div>
+    <div class="btn-grid">
+      <button class="btn btn-primary" onclick="alert('Created'); closeModal();">CREATE</button>
+      <button class="btn btn-danger" onclick="closeModal()">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<div id="engagement-detail" class="modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-title">ACME CORP</div>
+    <div class="card">
+      <div class="info-row">
+        <span class="info-label">Client:</span>
+        <span class="info-value">Acme Corporation</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Status:</span>
+        <span class="info-value">ACTIVE</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Scope:</span>
+        <span class="info-value">192.168.1.0/24</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">ROE:</span>
+        <span class="info-value">✓ SIGNED</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Duration:</span>
+        <span class="info-value">2024-09-22 to 2024-10-06</span>
+      </div>
+    </div>
+    <button class="btn btn-danger" style="margin-top: 12px;" onclick="closeModal()">CLOSE</button>
+  </div>
+</div>
+
+<div id="add-finding" class="modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-title">ADD FINDING</div>
+    <div class="form-group">
+      <label class="form-label">Title</label>
+      <input type="text" placeholder="Vulnerability Title">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Target</label>
+      <input type="text" placeholder="192.168.1.5">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Severity</label>
+      <select>
+        <option>Critical</option>
+        <option>High</option>
+        <option>Medium</option>
+        <option>Low</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea placeholder="Details..."></textarea>
+    </div>
+    <div class="btn-grid">
+      <button class="btn btn-primary" onclick="alert('Added'); closeModal();">ADD</button>
+      <button class="btn btn-danger" onclick="closeModal()">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<div id="finding-detail" class="modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-title"><span class="severity-critical">⬢ SQL INJECTION</span></div>
+    <div class="card">
+      <div class="info-row">
+        <span class="info-label">Target:</span>
+        <span class="info-value">192.168.1.5:80</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Severity:</span>
+        <span class="severity-critical">CRITICAL (9.8 CVSS)</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Tool:</span>
+        <span class="info-value">SQLMAP</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Status:</span>
+        <span class="info-value">OPEN</span>
+      </div>
+    </div>
+    <div style="margin-top: 12px; font-size: 0.85em; color: var(--text-secondary);">
+      <strong>Description:</strong><br>
+      Allows arbitrary database access via username field.
+    </div>
+    <button class="btn btn-danger" style="margin-top: 12px;">CLOSE</button>
+  </div>
+</div>
+
+<div id="add-node" class="modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-title">ADD NODE</div>
+    <div class="form-group">
+      <label class="form-label">Name</label>
+      <input type="text" placeholder="ESP32 Lab-2">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Type</label>
+      <select>
+        <option>ESP32</option>
+        <option>Raspberry Pi</option>
+        <option>Jetson</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">IP Address</label>
+      <input type="text" placeholder="192.168.1.100">
+    </div>
+    <div class="btn-grid">
+      <button class="btn btn-primary" onclick="alert('Registered'); closeModal();">REGISTER</button>
+      <button class="btn btn-danger" onclick="closeModal()">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// FALLING CODE RAIN
+function initializeCodeRain() {
+  const canvas = document.getElementById('code-rain');
+  const ctx = canvas.getContext('2d');
+  
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  
+  const pythonChars = ['d', 'e', 'f', 'c', 'l', 'a', 's', 's', '_', '(', ')', '{', '}', ':', 'i', 'm', 'p', 'o', 'r', 't', 'r', 'e', 't', 'u', 'n', '0', '1', 'x', '#', '@', '[', ']', '◈', '⬢'];
+  const fontSize = 12;
+  const columns = Math.floor(canvas.width / fontSize);
+  const drops = new Array(columns).fill(0);
+  
+  function draw() {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.fillStyle = '#00d9ff';
+    ctx.font = `${fontSize}px monospace`;
+    
+    for (let i = 0; i < drops.length; i++) {
+      const char = pythonChars[Math.floor(Math.random() * pythonChars.length)];
+      ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+      
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+    
+    requestAnimationFrame(draw);
+  }
+  
+  window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  });
+  
+  draw();
+}
+
+initializeCodeRain();
+
+// TAB SWITCHING
+function switchTab(tabName) {
+  document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  
+  const page = document.getElementById(tabName);
+  if (page) page.classList.add('active');
+  
+  const btn = document.querySelector(`[data-tab="${tabName}"]`);
+  if (btn) {
+    btn.classList.add('active');
+    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+  }
+  
+  document.getElementById('content').scrollTop = 0;
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tabName = btn.getAttribute('data-tab');
+    switchTab(tabName);
+  });
+});
+
+// MODALS
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) modal.classList.add('active');
+}
+
+function closeModal() {
+  document.querySelectorAll('.modal').forEach(modal => modal.classList.remove('active'));
+}
+
+document.querySelectorAll('.modal').forEach(modal => {
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+});
+</script>
+
+</body>
+</html>
