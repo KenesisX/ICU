@@ -1,0 +1,1916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>STRIKEBACK UNIFIED COMMAND CENTER - I SEE YOU</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-heat/0.2.0/leaflet-heat.min.js"></script>
+<style>
+:root {
+  --primary: #0d0605;
+  --secondary: #1a0f0d;
+  --accent: #ff1744;
+  --accent2: #c41c3b;
+  --gold: #f39c12;
+  --blue: #3498db;
+  --green: #27ae60;
+  --text: #ffffff;
+  --text-secondary: #cccccc;
+  --border: #ff1744;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--primary);
+  color: var(--text);
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+  letter-spacing: 0.5px;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* HEADER WITH BANNER */
+#header {
+  background: linear-gradient(135deg, rgba(13,6,5,0.98) 0%, rgba(26,15,13,0.98) 100%);
+  border-bottom: 2px solid var(--accent);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 8px 24px rgba(255,23,68,0.2);
+  backdrop-filter: blur(10px);
+  position: relative;
+  min-height: 100px;
+  max-height: 100px;
+}
+
+#banner-svg {
+  width: 100%;
+  max-width: 550px;
+  height: auto;
+  filter: drop-shadow(0 4px 12px rgba(255,23,68,0.15));
+}
+
+.strikeback-text {
+  position: absolute;
+  bottom: 6px;
+  right: 12px;
+  font-size: 0.6em;
+  color: var(--accent2);
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+/* TAB NAVIGATION */
+#tab-nav {
+  display: flex;
+  gap: 0;
+  background: linear-gradient(90deg, rgba(13,6,5,0.95) 0%, rgba(26,15,13,0.95) 100%);
+  padding: 0;
+  margin: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  border-bottom: 3px solid var(--accent);
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  box-shadow: 0 6px 16px rgba(255,23,68,0.15);
+  min-height: 60px;
+}
+
+.tab-btn {
+  flex-shrink: 0;
+  padding: 16px 22px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.85em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+  position: relative;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+}
+
+.tab-btn::before {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--gold));
+  transition: width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 0 8px rgba(255, 23, 68, 0.4);
+}
+
+.tab-btn:hover {
+  background: rgba(255, 23, 68, 0.05);
+  color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.tab-btn.active {
+  background: rgba(255, 23, 68, 0.08);
+  color: var(--accent);
+}
+
+.tab-btn.active::before {
+  width: 100%;
+}
+
+/* MAIN CONTENT */
+#content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--primary);
+  padding: 0;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+.page {
+  display: none;
+  padding: 16px;
+  animation: pageSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  min-height: 100%;
+}
+
+@keyframes pageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page.active {
+  display: block;
+}
+
+/* CARD PANELS */
+.card {
+  background: linear-gradient(135deg, rgba(26,15,13,0.8) 0%, rgba(40,20,18,0.8) 100%);
+  border: 1.5px solid var(--accent);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(255,23,68,0.15), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.card:hover {
+  border-color: var(--gold);
+  box-shadow: 0 8px 20px rgba(255,23,68,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 23, 68, 0.3);
+  position: relative;
+  z-index: 2;
+}
+
+.card-title {
+  font-size: 0.95em;
+  font-weight: 900;
+  color: var(--accent);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.card-subtitle {
+  font-size: 0.7em;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 0.8em;
+  transition: all 0.2s ease;
+}
+
+.info-row:hover {
+  transform: translateX(2px);
+  color: var(--accent);
+}
+
+.info-label {
+  color: var(--text-secondary);
+}
+
+.info-value {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.status-badge {
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.65em;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 6px rgba(255,23,68,0.2);
+  transition: all 0.3s ease;
+}
+
+.status-active {
+  background: linear-gradient(135deg, #27ae60, #229954);
+  color: white;
+}
+
+.status-danger {
+  background: linear-gradient(135deg, var(--accent), #a93226);
+  color: white;
+  animation: dangerPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes dangerPulse {
+  0%, 100% { box-shadow: 0 2px 6px rgba(255,23,68,0.2); }
+  50% { box-shadow: 0 4px 12px rgba(255,23,68,0.4); }
+}
+
+/* BUTTONS */
+.btn {
+  padding: 10px 14px;
+  border: 1.5px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  border-radius: 5px;
+  font-size: 0.7em;
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  margin-bottom: 8px;
+  width: 100%;
+  letter-spacing: 1.5px;
+  font-family: 'Courier New', monospace;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 23, 68, 0.1);
+  transition: left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: -1;
+}
+
+.btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(255, 23, 68, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.btn:hover::before {
+  left: 0;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  border-color: var(--gold);
+  box-shadow: 0 4px 12px rgba(255, 23, 68, 0.2);
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.98);
+  animation: btnClick 0.6s ease-out;
+}
+
+@keyframes btnClick {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 23, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 15px rgba(255, 23, 68, 0.1);
+  }
+  100% {
+    box-shadow: 0 0 0 25px rgba(255, 23, 68, 0);
+  }
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), #c41c3b);
+  color: white;
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(255, 23, 68, 0.2);
+  font-weight: 900;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 4px 16px rgba(255, 23, 68, 0.3);
+}
+
+.btn-success {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.btn-success:hover {
+  background: rgba(39, 174, 96, 0.1);
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.15);
+}
+
+.btn-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+/* FORMS */
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.75em;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: 10px;
+  background: rgba(13, 6, 5, 0.8);
+  border: 1.5px solid var(--accent);
+  color: var(--text);
+  border-radius: 5px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85em;
+  transition: all 0.3s ease;
+  letter-spacing: 0.5px;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 12px rgba(243, 156, 18, 0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+  background: rgba(26, 15, 13, 0.9);
+  transform: translateY(-2px);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-size: 0.8em;
+}
+
+/* VISUALIZATION CONTAINERS */
+.viz-container {
+  width: 100%;
+  height: 400px;
+  background: rgba(13, 6, 5, 0.9);
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  position: relative;
+  overflow: hidden;
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.viz-container.clickable {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.viz-container.clickable:hover {
+  border-color: var(--gold);
+  box-shadow: 0 0 20px rgba(255, 23, 68, 0.2);
+  transform: scale(1.01);
+}
+
+.viz-container canvas {
+  max-width: 100%;
+  max-height: 100%;
+  image-rendering: crisp-edges;
+}
+
+/* MODALS */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(13, 6, 5, 0.95);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+  animation: modalFadeIn 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal.active {
+  display: flex;
+}
+
+.modal-content {
+  background: linear-gradient(135deg, rgba(26,15,13,0.95) 0%, rgba(40,20,18,0.95) 100%);
+  border: 2px solid var(--accent);
+  padding: 20px;
+  width: 95%;
+  height: 95%;
+  max-width: 1400px;
+  overflow-y: auto;
+  border-radius: 8px;
+  box-shadow: 0 0 40px rgba(255, 23, 68, 0.3);
+  position: relative;
+  animation: slideUpSmooth 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideUpSmooth {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 2em;
+  color: var(--accent);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  transform: rotate(90deg) scale(1.1);
+  color: var(--gold);
+}
+
+.modal-title {
+  color: var(--accent);
+  font-size: 1.3em;
+  font-weight: 900;
+  margin-bottom: 12px;
+  clear: both;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* SPECTRUM PANELS GRID */
+.spectrum-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.spectrum-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.spectrum-item.full {
+  grid-column: 1 / -1;
+}
+
+/* SPRITES */
+.sprite-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin: 16px 0;
+  padding: 12px;
+  background: rgba(255, 23, 68, 0.05);
+  border-radius: 5px;
+  border: 1px solid rgba(255, 23, 68, 0.2);
+  gap: 20px;
+}
+
+.sprite {
+  font-size: 1.8em;
+  line-height: 1;
+  animation: dracFlutter 3s ease-in-out infinite;
+  filter: drop-shadow(0 2px 4px rgba(255,23,68,0.2));
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.sprite:nth-child(1) { animation-delay: 0s; }
+.sprite:nth-child(2) { animation-delay: 0.5s; }
+.sprite:nth-child(3) { animation-delay: 1s; }
+
+@keyframes dracFlutter {
+  0%, 100% { transform: translateY(0px) rotateZ(0deg); }
+  25% { transform: translateY(-4px) rotateZ(-2deg); }
+  50% { transform: translateY(-8px) rotateZ(0deg); }
+  75% { transform: translateY(-4px) rotateZ(2deg); }
+}
+
+/* LIST ITEMS */
+.list-item {
+  background: rgba(255, 23, 68, 0.05);
+  border-left: 4px solid var(--accent);
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+
+.list-item:hover {
+  border-left-color: var(--gold);
+  background: rgba(255, 23, 68, 0.1);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(255, 23, 68, 0.15);
+}
+
+.list-item-title {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 0.85em;
+  margin-bottom: 3px;
+  text-transform: uppercase;
+}
+
+.list-item-text {
+  color: var(--text-secondary);
+  font-size: 0.75em;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 23, 68, 0.05);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--accent), var(--gold));
+  border-radius: 5px;
+  box-shadow: 0 0 6px rgba(255, 23, 68, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--gold), var(--accent));
+}
+
+/* RESPONSIVE */
+@media (max-width: 1200px) {
+  .spectrum-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .btn-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .tab-btn {
+    padding: 14px 18px;
+    font-size: 0.75em;
+  }
+}
+
+h2 {
+  color: var(--accent);
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  font-size: 1.1em;
+}
+
+.alert {
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 12px;
+  font-size: 0.8em;
+  border-left: 4px solid var(--accent);
+  background: rgba(255, 23, 68, 0.1);
+}
+
+.severity-critical {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.code-block {
+  background: rgba(13, 6, 5, 0.9);
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  padding: 10px;
+  margin: 8px 0;
+  font-size: 0.75em;
+  color: var(--gold);
+  overflow-x: auto;
+  position: relative;
+}
+</style>
+</head>
+<body>
+
+<div id="root">
+  <!-- HEADER WITH BANNER -->
+  <div id="header">
+    <svg id="banner-svg" viewBox="0 0 800 220" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <linearGradient id="codeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#ff1744;stop-opacity:0.8" />
+          <stop offset="100%" style="stop-color:#c41c3b;stop-opacity:0.6" />
+        </linearGradient>
+      </defs>
+
+      <circle cx="400" cy="80" r="120" fill="rgba(255, 23, 68, 0.08)" filter="url(#glow)"/>
+
+      <!-- RADIATING CODE LINES -->
+      <g stroke="url(#codeGrad)" stroke-width="1.5" opacity="0.6">
+        <line x1="400" y1="80" x2="500" y2="20" stroke-dasharray="5,3"/>
+        <line x1="400" y1="80" x2="520" y2="50" stroke-dasharray="5,3"/>
+        <line x1="400" y1="80" x2="530" y2="90" stroke-dasharray="5,3"/>
+        <line x1="400" y1="80" x2="520" y2="130" stroke-dasharray="5,3"/>
+        <line x1="400" y1="80" x2="500" y2="160" stroke-dasharray="5,3"/>
+        <line x1="400" y1="80" x2="450" y2="170" stroke-dasharray="5,3"/>
+        <line x1="400" y1="80" x2="400" y2="180" stroke-dasharray="5,3"/>
+        <line x1="400" y1="80" x2="350" y2="170" stroke-dasharray="5,3"/>
+        <line x1="400" y1="80" x2="300" y2="160" stroke-dasharray="5,3"/>
+        <line x1="400" y1="80" x2="280" y2="130" stroke-dasharray="5,3"/>
+        <line x1="400" y1="80" x2="270" y2="90" stroke-dasharray="5,3"/>
+        <line x1="400" y1="80" x2="280" y2="50" stroke-dasharray="5,3"/>
+        <line x1="400" y1="80" x2="300" y2="20" stroke-dasharray="5,3"/>
+      </g>
+
+      <!-- PYTHON CODE TEXT -->
+      <text x="480" y="35" font-size="12" fill="#ff1744" opacity="0.7" font-family="monospace">def</text>
+      <text x="510" y="65" font-size="11" fill="#ff1744" opacity="0.7" font-family="monospace">class</text>
+      <text x="520" y="110" font-size="12" fill="#ff1744" opacity="0.7" font-family="monospace">import</text>
+      <text x="500" y="155" font-size="11" fill="#ff1744" opacity="0.7" font-family="monospace">return</text>
+      <text x="430" y="175" font-size="12" fill="#ff1744" opacity="0.7" font-family="monospace">lambda</text>
+      <text x="370" y="175" font-size="11" fill="#ff1744" opacity="0.7" font-family="monospace">yield</text>
+      <text x="290" y="155" font-size="12" fill="#ff1744" opacity="0.7" font-family="monospace">async</text>
+      <text x="270" y="110" font-size="11" fill="#ff1744" opacity="0.7" font-family="monospace">await</text>
+      <text x="280" y="65" font-size="12" fill="#ff1744" opacity="0.7" font-family="monospace">from</text>
+      <text x="310" y="35" font-size="11" fill="#ff1744" opacity="0.7" font-family="monospace">try</text>
+
+      <!-- MAIN EYEBALL -->
+      <circle cx="400" cy="80" r="95" fill="white" stroke="#2c3e50" stroke-width="2"/>
+      <circle cx="400" cy="80" r="55" fill="linear-gradient(135deg, #34495e 0%, #2c3e50 50%, #1a252f 100%)" stroke="#2c3e50" stroke-width="1.5"/>
+      
+      <!-- STAR PUPIL -->
+      <polygon points="400,40 410,60 432,60 415,72 422,92 400,80 378,92 385,72 368,60 390,60" fill="#f39c12" stroke="#f39c12" stroke-width="1" opacity="0.9" filter="url(#glow)"/>
+      
+      <!-- IRIS HIGHLIGHT -->
+      <ellipse cx="385" cy="65" rx="20" ry="25" fill="white" opacity="0.3"/>
+
+      <!-- CIRCULAR TEXT "I SEE YOU" -->
+      <defs>
+        <path id="circlePath" d="M 400, 30 A 100, 100 0 0, 1 400, 230" fill="none"/>
+      </defs>
+      <text font-size="18" font-weight="900" letter-spacing="3" fill="#2c3e50" font-family="'Courier New', monospace">
+        <textPath href="#circlePath" startOffset="50%" text-anchor="middle">
+          I  SEE  YOU
+        </textPath>
+      </text>
+
+      <!-- LIGHTNING BOLTS -->
+      <g fill="#f39c12" opacity="0.8">
+        <polygon points="750,15 740,35 745,35 730,55 750,40 740,45 760,20"/>
+        <polygon points="50,15 60,35 55,35 70,55 50,40 60,45 40,20"/>
+      </g>
+
+      <!-- BOTTOM TEXT -->
+      <text x="400" y="210" font-size="14" font-weight="900" text-anchor="middle" fill="#2c3e50" letter-spacing="2" font-family="'Courier New', monospace">
+        STRIKEBACK TECH ⚡ UNIFIED COMMAND CENTER
+      </text>
+    </svg>
+    <div class="strikeback-text">ICU</div>
+  </div>
+
+  <!-- TAB NAVIGATION -->
+  <div id="tab-nav">
+    <!-- CORE OPERATIONS -->
+    <button class="tab-btn active" data-tab="dashboard">📊 DASHBOARD</button>
+    <button class="tab-btn" data-tab="engagements">📅 ENGAGEMENTS</button>
+    <button class="tab-btn" data-tab="operations">⚙️ OPERATIONS</button>
+    
+    <!-- SDR ANALYSIS -->
+    <button class="tab-btn" data-tab="sdr-control">📡 SDR CONTROL</button>
+    <button class="tab-btn" data-tab="spectrum">📈 SPECTRUM</button>
+    <button class="tab-btn" data-tab="waterfall">≡ WATERFALL</button>
+    <button class="tab-btn" data-tab="iq-analysis">🔹 IQ ANALYSIS</button>
+    
+    <!-- SIGNAL TRACKING -->
+    <button class="tab-btn" data-tab="adsb-tracking">✈️ ADS-B TRACKING</button>
+    <button class="tab-btn" data-tab="ais-tracking">🚢 AIS TRACKING</button>
+    <button class="tab-btn" data-tab="wardriving">🗺️ WAR-DRIVING</button>
+    <button class="tab-btn" data-tab="realtime-map">🌍 LIVE MAP</button>
+    
+    <!-- PENTESTING TOOLS -->
+    <button class="tab-btn" data-tab="tools">🛠️ TOOLS</button>
+    <button class="tab-btn" data-tab="sqli">💉 SQLi</button>
+    <button class="tab-btn" data-tab="hashes">🔐 HASHES</button>
+    <button class="tab-btn" data-tab="pcaps">📦 PCAPS</button>
+    
+    <!-- ANALYSIS -->
+    <button class="tab-btn" data-tab="findings">🎯 FINDINGS</button>
+    <button class="tab-btn" data-tab="captures">💾 CAPTURES</button>
+    <button class="tab-btn" data-tab="compliance">🔒 COMPLIANCE</button>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="content">
+
+    <!-- ============ DASHBOARD ============ -->
+    <div id="dashboard" class="page active">
+      <h2>⚡ SYSTEM STATUS & OVERVIEW</h2>
+      <div class="sprite-container">
+        <span class="sprite">⟪◆⟫</span>
+        <span class="sprite">◈━◈</span>
+        <span class="sprite">⬢⚡⬢</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Active Engagement</div>
+            <div class="card-subtitle">Target Assessment</div>
+          </div>
+          <span class="status-badge status-active">LIVE</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Status:</span>
+          <span class="info-value">72% COMPLETE</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">SDR Status:</span>
+          <span class="info-value">RTL-SDR V4 ACTIVE</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Signals Detected:</span>
+          <span class="info-value">23 LIVE</span>
+        </div>
+        <button class="btn btn-primary" onclick="switchTab('engagements')">VIEW DETAILS</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Quick Access</div></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-success" onclick="switchTab('spectrum')">SPECTRUM</button>
+          <button class="btn btn-success" onclick="switchTab('adsb-tracking')">ADS-B</button>
+          <button class="btn btn-success" onclick="switchTab('wardriving')">WARDRIVING</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-success" onclick="switchTab('sqli')">SQLi INJECT</button>
+          <button class="btn btn-success" onclick="switchTab('hashes')">CRACK</button>
+          <button class="btn btn-success" onclick="switchTab('findings')">FINDINGS</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ ENGAGEMENTS ============ -->
+    <div id="engagements" class="page">
+      <h2>📅 ENGAGEMENTS</h2>
+      <div class="sprite-container">
+        <span class="sprite">◈▓◈</span>
+        <span class="sprite">⟪━⟫</span>
+        <span class="sprite">⬡▸⬡</span>
+      </div>
+      <button class="btn btn-success" style="margin-bottom: 12px;">⊕ NEW ENGAGEMENT</button>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">ACME CORP PENTEST</div>
+            <div class="card-subtitle">RF + Physical Assessment</div>
+          </div>
+          <span class="status-badge status-active">ACTIVE</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Scope:</span>
+          <span class="info-value">192.168.1.0/24 + 2.4GHz WiFi</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Methods:</span>
+          <span class="info-value">Physical + RF + Digital</span>
+        </div>
+        <div class="btn-grid">
+          <button class="btn btn-primary">VIEW</button>
+          <button class="btn">EDIT</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ OPERATIONS ============ -->
+    <div id="operations" class="page">
+      <h2>⚙️ OPERATIONS HUB</h2>
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Active Operations</div></div>
+        </div>
+        <div class="info-row">
+          <span class="info-label">SDR Capture:</span>
+          <span class="info-value">RUNNING</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Signal Detection:</span>
+          <span class="info-value">23 signals detected</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">War-driving:</span>
+          <span class="info-value">GPS logging active</span>
+        </div>
+        <div class="btn-grid">
+          <button class="btn btn-primary" onclick="startSDR()">▶ START SDR</button>
+          <button class="btn" onclick="stopSDR()">⏹ STOP</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ SDR CONTROL ============ -->
+    <div id="sdr-control" class="page">
+      <h2>📡 SDR CONTROL & CONFIGURATION</h2>
+      <div class="sprite-container">
+        <span class="sprite">⟪🛰⟫</span>
+        <span class="sprite">◈━━◈</span>
+        <span class="sprite">⬢📡⬢</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Device Configuration</div></div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">🎙️ Device</label>
+          <select id="device-select">
+            <option value="rtlsdr">RTL-SDR V4 (24MHz-1.7GHz)</option>
+            <option value="pluto">ADALM Pluto (325MHz-3.8GHz, FPGA)</option>
+            <option value="hackrf">HackRF One (1MHz-6GHz, TX)</option>
+            <option value="esp32_cc1101">ESP32 + CC1101 (300-928MHz)</option>
+            <option value="esp32_nrf24">ESP32 + NRF24 (2.4GHz)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">📡 Center Frequency (MHz)</label>
+          <input type="number" id="freq-input" value="100" step="0.1">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">🔧 Sample Rate (Msps)</label>
+          <select id="samplerate-select">
+            <option value="1">1</option>
+            <option value="2.4" selected>2.4</option>
+            <option value="3.2">3.2</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">📊 FFT Size</label>
+          <select id="fft-size">
+            <option value="512">512</option>
+            <option value="1024">1024</option>
+            <option value="2048" selected>2048</option>
+            <option value="4096">4096</option>
+            <option value="8192">8192</option>
+          </select>
+        </div>
+
+        <div class="btn-grid">
+          <button class="btn btn-primary" onclick="startSDR()">▶ START CAPTURE</button>
+          <button class="btn" onclick="stopSDR()">⏹ STOP</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Signal Detection Settings</div></div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">🎯 Detection Threshold (dBm)</label>
+          <input type="number" id="threshold-input" value="-80" step="1">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">📍 Frequency Range</label>
+          <select id="range-select">
+            <option value="all">All Frequencies</option>
+            <option value="vhf">VHF (30-300 MHz)</option>
+            <option value="uhf">UHF (300-3000 MHz)</option>
+            <option value="ism">ISM (2.4 GHz)</option>
+            <option value="lte">LTE (700-2600 MHz)</option>
+          </select>
+        </div>
+
+        <button class="btn btn-success" style="width: 100%;">⚙️ APPLY SETTINGS</button>
+      </div>
+    </div>
+
+    <!-- ============ SPECTRUM ANALYZER ============ -->
+    <div id="spectrum" class="page">
+      <h2>📈 SPECTRUM ANALYZER</h2>
+      <div class="sprite-container">
+        <span class="sprite">⟪▲⟫</span>
+        <span class="sprite">◈━━◈</span>
+        <span class="sprite">⬢📊⬢</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Real-Time Power Spectrum</div>
+          <div style="font-size: 0.7em; color: var(--text-secondary);">-120 to 0 dBm</div>
+        </div>
+        <div class="viz-container clickable" onclick="expandModal('spectrum-modal')">
+          <canvas id="spectrum-canvas" style="width: 100%; height: 100%;"></canvas>
+        </div>
+        <div style="font-size: 0.75em; color: var(--text-secondary); padding: 8px 0; border-top: 1px solid rgba(255,23,68,0.2);">
+          Click to expand • Updating 20Hz • Center: 100.0 MHz • BW: 2.4 MHz
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Top Signals</div>
+        </div>
+        <div id="signal-list">
+          <div class="list-item">
+            <div class="list-item-title">100.1 MHz (FM Radio)</div>
+            <div class="list-item-text">Power: -65 dBm | Bandwidth: 200 kHz | Mod: FM</div>
+          </div>
+          <div class="list-item">
+            <div class="list-item-title">433.92 MHz (ISM)</div>
+            <div class="list-item-text">Power: -78 dBm | Bandwidth: 50 kHz | Mod: GFSK</div>
+          </div>
+          <div class="list-item">
+            <div class="list-item-title">2.4 GHz (WiFi)</div>
+            <div class="list-item-text">Power: -72 dBm | Bandwidth: 20 MHz | Mod: OFDM</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-grid">
+        <button class="btn btn-success">🔍 PEAK SEARCH</button>
+        <button class="btn btn-success">💾 SAVE DATA</button>
+      </div>
+    </div>
+
+    <!-- ============ WATERFALL ============ -->
+    <div id="waterfall" class="page">
+      <h2>≡ WATERFALL DISPLAY (300 Seconds)</h2>
+      <div class="sprite-container">
+        <span class="sprite">⟪∿⟫</span>
+        <span class="sprite">◈━━◈</span>
+        <span class="sprite">⬢≡⬢</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Rolling Spectrogram</div>
+          <div style="font-size: 0.7em; color: var(--text-secondary);">300s Rolling Display</div>
+        </div>
+        <div class="viz-container clickable" onclick="expandModal('waterfall-modal')" style="height: 500px;">
+          <canvas id="waterfall-canvas" style="width: 100%; height: 100%; image-rendering: pixelated;"></canvas>
+        </div>
+        <div style="font-size: 0.75em; color: var(--text-secondary); padding: 8px 0; border-top: 1px solid rgba(255,23,68,0.2);">
+          Click to expand • Frequency vs Time • Hot=Strong, Cold=Weak
+        </div>
+      </div>
+
+      <div class="btn-grid">
+        <button class="btn btn-success">📹 RECORD WATERFALL</button>
+        <button class="btn btn-success">💾 SAVE SNAPSHOT</button>
+      </div>
+    </div>
+
+    <!-- ============ IQ ANALYSIS ============ -->
+    <div id="iq-analysis" class="page">
+      <h2>🔹 IQ CONSTELLATION & MODULATION ANALYSIS</h2>
+      <div class="sprite-container">
+        <span class="sprite">⬢🔹⬢</span>
+        <span class="sprite">◈━━◈</span>
+        <span class="sprite">⟪◎⟫</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">IQ Scatterplot</div>
+          <div style="font-size: 0.7em; color: var(--text-secondary);" id="mod-display">Estimated: QPSK</div>
+        </div>
+        <div class="viz-container clickable" onclick="expandModal('iq-modal')">
+          <canvas id="iq-canvas" style="width: 100%; height: 100%;"></canvas>
+        </div>
+        <div style="font-size: 0.75em; color: var(--text-secondary); padding: 8px 0; border-top: 1px solid rgba(255,23,68,0.2);">
+          Click to expand • Real vs Imaginary • I-Channel (X) vs Q-Channel (Y)
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Modulation Analysis</div>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Detected Type:</span>
+          <span class="info-value" id="modulation-type">QPSK</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Confidence:</span>
+          <span class="info-value">92%</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Possible Matches:</span>
+          <span class="info-value">QPSK, BPSK, QPSK/OQPSK</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ ADS-B TRACKING ============ -->
+    <div id="adsb-tracking" class="page">
+      <h2>✈️ ADS-B AIRCRAFT TRACKING (1090 MHz)</h2>
+      <div class="sprite-container">
+        <span class="sprite">⟪✈⟫</span>
+        <span class="sprite">◈━━◈</span>
+        <span class="sprite">⬢⚡⬢</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Active Aircraft</div>
+          <div style="font-size: 0.7em; color: var(--text-secondary);">5 Aircraft Tracked</div>
+        </div>
+        <div id="aircraft-list">
+          <div class="list-item">
+            <div class="list-item-title">N12345 (Southwest Airlines)</div>
+            <div class="list-item-text">Altitude: 35,000 ft | Speed: 450 knots | Bearing: 270° | Distance: 42 nm</div>
+          </div>
+          <div class="list-item">
+            <div class="list-item-title">N67890 (United Airlines)</div>
+            <div class="list-item-text">Altitude: 28,500 ft | Speed: 480 knots | Bearing: 045° | Distance: 28 nm</div>
+          </div>
+          <div class="list-item">
+            <div class="list-item-title">N11111 (Denver Center Approach)</div>
+            <div class="list-item-text">Altitude: 8,200 ft | Speed: 250 knots | Bearing: 180° | Distance: 15 nm</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-grid">
+        <button class="btn btn-success">🗺️ VIEW MAP</button>
+        <button class="btn btn-success">📊 STATISTICS</button>
+      </div>
+    </div>
+
+    <!-- ============ AIS TRACKING ============ -->
+    <div id="ais-tracking" class="page">
+      <h2>🚢 AIS VESSEL TRACKING (VHF Maritime)</h2>
+      <div class="sprite-container">
+        <span class="sprite">⟪🚢⟫</span>
+        <span class="sprite">◈━━◈</span>
+        <span class="sprite">⬢⚓⬢</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Active Vessels</div>
+          <div style="font-size: 0.7em; color: var(--text-secondary);">8 Vessels Detected</div>
+        </div>
+        <div id="vessel-list">
+          <div class="list-item">
+            <div class="list-item-title">MMSI: 369704980 (Cargo Ship)</div>
+            <div class="list-item-text">Lat/Lon: 40.123°N, 105.456°W | Course: 245° | Speed: 12 knots</div>
+          </div>
+          <div class="list-item">
+            <div class="list-item-title">MMSI: 367891234 (Fishing Vessel)</div>
+            <div class="list-item-text">Lat/Lon: 40.145°N, 105.380°W | Course: 090° | Speed: 8 knots</div>
+          </div>
+          <div class="list-item">
+            <div class="list-item-title">MMSI: 369123456 (Tanker)</div>
+            <div class="list-item-text">Lat/Lon: 40.098°N, 105.512°W | Course: 180° | Speed: 15 knots</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-grid">
+        <button class="btn btn-success">🗺️ VIEW MAP</button>
+        <button class="btn btn-success">📊 STATISTICS</button>
+      </div>
+    </div>
+
+    <!-- ============ WAR-DRIVING ============ -->
+    <div id="wardriving" class="page">
+      <h2>🗺️ WAR-DRIVING & SIGNAL MAPPING</h2>
+      <div class="sprite-container">
+        <span class="sprite">⬢🗺⬢</span>
+        <span class="sprite">◈━━◈</span>
+        <span class="sprite">⟪📍⟫</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">GPS-Synchronized Signal Capture</div>
+        </div>
+        <div class="viz-container clickable" onclick="expandModal('map-modal')" style="height: 400px;">
+          <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
+            🗺️ Signal Heatmap (GPS Overlay)
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">War-drive Session</div>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Status:</span>
+          <span class="info-value">ACTIVE</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Duration:</span>
+          <span class="info-value">45 minutes</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Signals Logged:</span>
+          <span class="info-value">1,247 detections</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Coverage Area:</span>
+          <span class="info-value">12.5 square miles</span>
+        </div>
+        
+        <div class="btn-grid">
+          <button class="btn btn-primary">▶ START WARDRIVING</button>
+          <button class="btn">⏹ STOP & SAVE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ TOOLS ============ -->
+    <div id="tools" class="page">
+      <h2>🛠️ PENTESTING TOOLS</h2>
+      <div class="sprite-container">
+        <span class="sprite">⟪⚙⟫</span>
+        <span class="sprite">◈━━◈</span>
+        <span class="sprite">⬢🔧⬢</span>
+      </div>
+      <div class="alert">✓ All tools are scope-limited. Out-of-scope ops = BLOCKED.</div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Network Tools</div></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-success">🔍 NMAP</button>
+          <button class="btn btn-success">📡 Masscan</button>
+          <button class="btn btn-success">🌐 Airmon-ng</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Crack Tools</div></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-success">🔐 Hashcat</button>
+          <button class="btn btn-success">🔑 John</button>
+          <button class="btn btn-success">🎯 Hydra</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Web Tools</div></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-success">🌐 Burp</button>
+          <button class="btn btn-success">💉 SQLMap</button>
+          <button class="btn btn-success">🔍 Nikto</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ SQLi ============ -->
+    <div id="sqli" class="page">
+      <h2>💉 SQL INJECTION CONTROL</h2>
+      <div class="sprite-container">
+        <span class="sprite">◈▓◈</span>
+        <span class="sprite">💉━💉</span>
+        <span class="sprite">⬡▸⬡</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Target Configuration</div></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target URL</label>
+          <input type="text" placeholder="http://target.local/login.php">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Vulnerable Parameter</label>
+          <input type="text" placeholder="username">
+        </div>
+        <button class="btn btn-primary">⚙️ CONFIGURE</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Injection Payload Builder</div></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Payload Type</label>
+          <select>
+            <option>UNION-based</option>
+            <option>Error-based</option>
+            <option>Blind (Time-based)</option>
+            <option>Custom</option>
+          </select>
+        </div>
+        <div class="btn-grid">
+          <button class="btn btn-primary">▶ EXECUTE</button>
+          <button class="btn">⚠️ TEST SCOPE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ HASHES ============ -->
+    <div id="hashes" class="page">
+      <h2>🔐 HASHCAT CRACKS</h2>
+      <div class="sprite-container">
+        <span class="sprite">⬢🔐⬢</span>
+        <span class="sprite">◈━◈</span>
+        <span class="sprite">⟪✓⟫</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Cracked Results</div></div>
+        </div>
+        <button class="btn btn-primary">📋 COPY ALL CRACKED</button>
+        <button class="btn btn-success" style="margin-top: 8px;">📥 EXPORT CSV</button>
+      </div>
+    </div>
+
+    <!-- ============ PCAPS ============ -->
+    <div id="pcaps" class="page">
+      <h2>📦 PCAP ANALYSIS</h2>
+      <div class="sprite-container">
+        <span class="sprite">⬢📦⬢</span>
+        <span class="sprite">◈━━◈</span>
+        <span class="sprite">⟪▸⟫</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Upload & Extract</div></div>
+        </div>
+        <button class="btn btn-success">📂 SELECT FILE</button>
+        <button class="btn btn-primary" style="margin-top: 8px;">🔐 EXTRACT HASHES</button>
+      </div>
+    </div>
+
+    <!-- ============ FINDINGS ============ -->
+    <div id="findings" class="page">
+      <h2>🎯 FINDINGS & VULNERABILITIES</h2>
+      <div class="sprite-container">
+        <span class="sprite">⬢▸◈</span>
+        <span class="sprite">◈━▸◈</span>
+        <span class="sprite">⟪⚠⟫</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title"><span class="severity-critical">⬢ SQL INJECTION</span></div></div>
+          <span class="status-badge status-danger">CRITICAL</span>
+        </div>
+        <div style="font-size: 0.8em; color: var(--text-secondary); margin-top: 8px;">
+          Login parameter vulnerable to UNION-based SQLi. Database enumeration possible.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title"><span class="severity-critical">⬢ WEAK PASSWORD</span></div></div>
+          <span class="status-badge status-danger">CRITICAL</span>
+        </div>
+        <div style="font-size: 0.8em; color: var(--text-secondary); margin-top: 8px;">
+          Admin account uses password: "admin123" - Cracked in 2 seconds.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">⬢ UNENCRYPTED RF</div></div>
+          <span class="status-badge status-danger">HIGH</span>
+        </div>
+        <div style="font-size: 0.8em; color: var(--text-secondary); margin-top: 8px;">
+          Building access control uses unencrypted 433.92 MHz fob signals. Replay attack viable.
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ CAPTURES ============ -->
+    <div id="captures" class="page">
+      <h2>💾 CAPTURE LIBRARY</h2>
+      <div class="sprite-container">
+        <span class="sprite">⬢💾⬢</span>
+        <span class="sprite">◈━━◈</span>
+        <span class="sprite">⟪📁⟫</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Saved IQ Captures</div>
+        </div>
+        <div id="capture-list">
+          <div class="list-item">
+            <div class="list-item-title">Capture_2026-09-23_14-32-10</div>
+            <div class="list-item-text">100.0 MHz | 2.4 MSps | 30 sec | FM Radio | 45.2 MB</div>
+          </div>
+          <div class="list-item">
+            <div class="list-item-title">Capture_2026-09-23_13-15-45</div>
+            <div class="list-item-text">433.92 MHz | 2.4 MSps | 60 sec | ISM Band Signals | 87.3 MB</div>
+          </div>
+          <div class="list-item">
+            <div class="list-item-title">Capture_2026-09-23_11-02-33</div>
+            <div class="list-item-text">2.4 GHz | 5.0 MSps | 120 sec | WiFi OFDM | 234.7 MB</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-grid">
+        <button class="btn btn-success">💾 SAVE CURRENT</button>
+        <button class="btn">📥 EXPORT ALL</button>
+      </div>
+    </div>
+
+    <!-- ============ REALTIME MAP ============ -->
+    <div id="realtime-map" class="page">
+      <h2>🌍 LIVE OPERATIONAL MAP (Real-Time WebSocket)</h2>
+      <div class="sprite-container">
+        <span class="sprite">⬢🌍⬢</span>
+        <span class="sprite">◈━━◈</span>
+        <span class="sprite">⟪📍⟫</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Integrated Threat Map</div>
+          <div style="font-size: 0.7em; color: var(--text-secondary);" id="map-status">🔴 Live | WebSocket: Connected</div>
+        </div>
+        <div id="realtime-map-container" style="width: 100%; height: 600px; border: 2px solid #ff1744; border-radius: 5px; background: rgba(13,6,5,0.8); position: relative; overflow: hidden;">
+          <!-- Leaflet map will render here -->
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Map Layers & Filters</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">👁️ Visibility Toggle</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <label style="display: flex; align-items: center; cursor: pointer; color: var(--text-secondary); font-size: 0.8em;">
+              <input type="checkbox" id="layer-wardriving" checked style="margin-right: 8px; cursor: pointer;"> War-Drive GPS
+            </label>
+            <label style="display: flex; align-items: center; cursor: pointer; color: var(--text-secondary); font-size: 0.8em;">
+              <input type="checkbox" id="layer-adsb" checked style="margin-right: 8px; cursor: pointer;"> ADS-B ✈️
+            </label>
+            <label style="display: flex; align-items: center; cursor: pointer; color: var(--text-secondary); font-size: 0.8em;">
+              <input type="checkbox" id="layer-ais" checked style="margin-right: 8px; cursor: pointer;"> AIS 🚢
+            </label>
+            <label style="display: flex; align-items: center; cursor: pointer; color: var(--text-secondary); font-size: 0.8em;">
+              <input type="checkbox" id="layer-rf-signals" checked style="margin-right: 8px; cursor: pointer;"> RF Signals 📡
+            </label>
+            <label style="display: flex; align-items: center; cursor: pointer; color: var(--text-secondary); font-size: 0.8em;">
+              <input type="checkbox" id="layer-heatmap" checked style="margin-right: 8px; cursor: pointer;"> Heatmap 🌡️
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">🎯 Signal Strength Filter (dBm)</label>
+          <input type="range" id="signal-threshold" min="-120" max="-40" value="-80" style="width: 100%;">
+          <div style="font-size: 0.7em; color: var(--text-secondary); margin-top: 4px;">
+            Threshold: <span id="threshold-display">-80 dBm</span>
+          </div>
+        </div>
+
+        <div class="btn-grid">
+          <button class="btn btn-success" onclick="centerMapOnUser()">📍 CENTER</button>
+          <button class="btn btn-success" onclick="exportMapGeoJSON()">📥 EXPORT</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Live Feed Statistics</div>
+        </div>
+        <div class="info-row">
+          <span class="info-label">GPS Points Logged:</span>
+          <span class="info-value" id="stat-gps">0</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Aircraft Tracked:</span>
+          <span class="info-value" id="stat-aircraft">0</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Vessels Detected:</span>
+          <span class="info-value" id="stat-vessels">0</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">RF Detections:</span>
+          <span class="info-value" id="stat-rf">0</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">WebSocket Packets:</span>
+          <span class="info-value" id="stat-packets">0</span>
+        </div>
+      </div>
+    </div>
+    <div id="compliance" class="page">
+      <h2>🔒 AUTH & COMPLIANCE</h2>
+      <div class="sprite-container">
+        <span class="sprite">⟪🛡⟫</span>
+        <span class="sprite">⬢✓⬢</span>
+        <span class="sprite">◈━◈</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Authorization Status</div></div>
+          <span class="status-badge status-active">✓ AUTHORIZED</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Engagement:</span>
+          <span class="info-value">ACME CORP PENTEST</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Authorized By:</span>
+          <span class="info-value">CTO John Smith</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Valid Until:</span>
+          <span class="info-value">2026-10-23</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Audit Log (Immutable)</div></div>
+        </div>
+        <div id="audit-log" style="font-size: 0.6em; color: var(--text-secondary); max-height: 80px; overflow-y: auto; line-height: 1.3;">
+          [2026-09-23 14:32:10] Started SDR Capture - RTL-SDR V4 @ 100.0 MHz<br>
+          [2026-09-23 14:35:22] Detected 23 signals, saved to database<br>
+          [2026-09-23 14:38:45] Executed FM demodulation<br>
+          [2026-09-23 14:40:01] Saved capture session: Capture_2026-09-23_14-32-10<br>
+          [2026-09-23 14:42:33] Generated findings report<br>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODALS FOR EXPANDED VIEWS -->
+<div id="spectrum-modal" class="modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('spectrum-modal')">×</button>
+    <div class="modal-title">📈 Full Spectrum Analyzer</div>
+    <div style="width: 100%; height: 600px; background: rgba(13,6,5,0.8); border: 1px solid #ff1744; border-radius: 5px; display: flex; align-items: center; justify-content: center;">
+      <canvas id="spectrum-fullscreen" style="width: 100%; height: 100%;"></canvas>
+    </div>
+    <div style="margin-top: 16px; font-size: 0.8em; color: var(--text-secondary);">
+      Real-time FFT power spectrum • 2048-point FFT • Center: 100.0 MHz • BW: 2.4 MHz
+    </div>
+  </div>
+</div>
+
+<div id="waterfall-modal" class="modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('waterfall-modal')">×</button>
+    <div class="modal-title">≡ Full Waterfall Display</div>
+    <div style="width: 100%; height: 600px; background: rgba(13,6,5,0.8); border: 1px solid #ff1744; border-radius: 5px; display: flex; align-items: center; justify-content: center;">
+      <canvas id="waterfall-fullscreen" style="width: 100%; height: 100%; image-rendering: pixelated;"></canvas>
+    </div>
+    <div style="margin-top: 16px; font-size: 0.8em; color: var(--text-secondary);">
+      300-second rolling display • Frequency over time • Red = strong, Blue = weak
+    </div>
+  </div>
+</div>
+
+<div id="iq-modal" class="modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('iq-modal')">×</button>
+    <div class="modal-title">🔹 IQ Constellation (Full)</div>
+    <div style="width: 100%; height: 600px; background: rgba(13,6,5,0.8); border: 1px solid #ff1744; border-radius: 5px; display: flex; align-items: center; justify-content: center;">
+      <canvas id="iq-fullscreen" style="width: 100%; height: 100%;"></canvas>
+    </div>
+    <div style="margin-top: 16px; font-size: 0.8em; color: var(--text-secondary);">
+      I-Channel (Real) vs Q-Channel (Imaginary) • Modulation: QPSK (92% confidence)
+    </div>
+  </div>
+</div>
+
+<div id="map-modal" class="modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('map-modal')">×</button>
+    <div class="modal-title">🗺️ War-Driving Heatmap</div>
+    <div style="width: 100%; height: 600px; background: rgba(13,6,5,0.8); border: 1px solid #ff1744; border-radius: 5px; display: flex; align-items: center; justify-content: center;">
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--text-secondary);">
+        <div style="font-size: 2em; margin-bottom: 16px;">🗺️</div>
+        <div>Signal Coverage Heatmap</div>
+        <div style="font-size: 0.75em; margin-top: 8px;">1,247 detections across 12.5 sq mi</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Global state
+const state = {
+  isCapturing: false,
+  centerFreq: 100e6,
+  sampleRate: 2.4e6,
+  fftSize: 2048,
+  currentTab: 'dashboard',
+};
+
+// Tab switching
+function switchTab(tabName) {
+  document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+  const page = document.getElementById(tabName);
+  if (page) page.classList.add('active');
+
+  const btn = document.querySelector(`[data-tab="${tabName}"]`);
+  if (btn) {
+    btn.classList.add('active');
+    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+  }
+
+  document.getElementById('content').scrollTop = 0;
+  state.currentTab = tabName;
+}
+
+// Modal functions
+function expandModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) modal.classList.add('active');
+}
+
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) modal.classList.remove('active');
+}
+
+// SDR control functions
+function startSDR() {
+  state.isCapturing = true;
+  alert('SDR Capture Started\nDevice: ' + document.getElementById('device-select').value + '\nFrequency: ' + document.getElementById('freq-input').value + ' MHz');
+}
+
+function stopSDR() {
+  state.isCapturing = false;
+  alert('SDR Capture Stopped');
+}
+
+// Tab button event listeners
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    switchTab(btn.getAttribute('data-tab'));
+  });
+});
+
+// Modal click outside to close
+document.querySelectorAll('.modal').forEach(modal => {
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.classList.remove('active');
+    }
+  });
+});
+
+// Initialize
+// ============ LEAFLET MAP INITIALIZATION ============
+let mapInstance = null;
+let wardrivingLayer = null;
+let adsbLayer = null;
+let aisLayer = null;
+let rfSignalLayer = null;
+let heatmapLayer = null;
+let heatmapData = [];
+
+const mapStats = {
+  gpsPoints: 0,
+  aircraft: 0,
+  vessels: 0,
+  rfSignals: 0,
+  packets: 0,
+};
+
+function initializeMap() {
+  const mapContainer = document.getElementById('realtime-map-container');
+  if (!mapContainer || mapInstance) return;
+
+  // Create Leaflet map centered on Denver, CO (adjust to your ops center)
+  mapInstance = L.map(mapContainer).setView([39.7392, -104.9903], 11);
+
+  // OpenStreetMap basemap
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19,
+  }).addTo(mapInstance);
+
+  // Layer groups
+  wardrivingLayer = L.featureGroup().addTo(mapInstance);
+  adsbLayer = L.featureGroup().addTo(mapInstance);
+  aisLayer = L.featureGroup().addTo(mapInstance);
+  rfSignalLayer = L.featureGroup().addTo(mapInstance);
+
+  console.log('Leaflet map initialized @ 39.7392°N, -104.9903°W');
+}
+
+// Simulate WebSocket stream (replace with actual backend)
+function simulateWebSocketStream() {
+  // War-driving GPS trail
+  setInterval(() => {
+    const lat = 39.7392 + (Math.random() - 0.5) * 0.05;
+    const lon = -104.9903 + (Math.random() - 0.5) * 0.05;
+    const rssi = -80 + Math.random() * 30;
+    
+    addGPSPoint(lat, lon, rssi);
+  }, 2000);
+
+  // ADS-B aircraft blips
+  setInterval(() => {
+    const callsign = ['N' + Math.random().toString().slice(2, 7).toUpperCase()][0];
+    const lat = 39.7392 + (Math.random() - 0.5) * 0.15;
+    const lon = -104.9903 + (Math.random() - 0.5) * 0.15;
+    const altitude = 5000 + Math.random() * 30000;
+    const speed = 200 + Math.random() * 400;
+    
+    addAircraft(callsign, lat, lon, altitude, speed);
+  }, 5000);
+
+  // AIS vessel positions
+  setInterval(() => {
+    const mmsi = '36' + Math.floor(Math.random() * 9e6);
+    const lat = 39.7392 + (Math.random() - 0.5) * 0.2;
+    const lon = -104.9903 + (Math.random() - 0.5) * 0.2;
+    const course = Math.random() * 360;
+    const speed = 5 + Math.random() * 20;
+    
+    addVessel(mmsi, lat, lon, course, speed);
+  }, 6000);
+
+  // RF signal detections
+  setInterval(() => {
+    const freq = (100 + Math.random() * 2400).toFixed(1);
+    const lat = 39.7392 + (Math.random() - 0.5) * 0.08;
+    const lon = -104.9903 + (Math.random() - 0.5) * 0.08;
+    const rssi = -100 + Math.random() * 50;
+    
+    addRFSignal(freq, lat, lon, rssi);
+    heatmapData.push([lat, lon, (rssi + 100) / 150]);
+  }, 1500);
+}
+
+function addGPSPoint(lat, lon, rssi) {
+  if (!wardrivingLayer) return;
+
+  const strength = Math.max(0, Math.min(1, (rssi + 100) / 50));
+  const color = strength > 0.7 ? '#27ae60' : strength > 0.4 ? '#f39c12' : '#c0392b';
+
+  const circle = L.circleMarker([lat, lon], {
+    radius: 5,
+    fillColor: color,
+    color: '#ff1744',
+    weight: 1.5,
+    opacity: 0.8,
+    fillOpacity: 0.6,
+  })
+    .bindPopup(`<b>GPS Point</b><br>Signal: ${rssi.toFixed(1)} dBm<br>Lat/Lon: ${lat.toFixed(4)}, ${lon.toFixed(4)}`)
+    .addTo(wardrivingLayer);
+
+  mapStats.gpsPoints++;
+  mapStats.packets++;
+  updateMapStats();
+}
+
+function addAircraft(callsign, lat, lon, altitude, speed) {
+  if (!adsbLayer) return;
+
+  const marker = L.marker([lat, lon], {
+    icon: L.divIcon({
+      html: `<div style="color: #3498db; font-size: 1.5em; text-shadow: 0 0 3px #000;">✈</div>`,
+      iconSize: [24, 24],
+      className: 'aircraft-marker',
+    }),
+  })
+    .bindPopup(
+      `<b>${callsign} (ADS-B)</b><br>Alt: ${altitude.toFixed(0)} ft<br>Speed: ${speed.toFixed(0)} kt<br>Lat/Lon: ${lat.toFixed(4)}, ${lon.toFixed(4)}`
+    )
+    .addTo(adsbLayer);
+
+  mapStats.aircraft++;
+  mapStats.packets++;
+  updateMapStats();
+}
+
+function addVessel(mmsi, lat, lon, course, speed) {
+  if (!aisLayer) return;
+
+  const marker = L.marker([lat, lon], {
+    icon: L.divIcon({
+      html: `<div style="color: #2c3e50; font-size: 1.5em; text-shadow: 0 0 3px #ff1744;">🚢</div>`,
+      iconSize: [24, 24],
+      className: 'vessel-marker',
+    }),
+  })
+    .bindPopup(`<b>MMSI: ${mmsi} (AIS)</b><br>Course: ${course.toFixed(1)}°<br>Speed: ${speed.toFixed(1)} kt<br>Lat/Lon: ${lat.toFixed(4)}, ${lon.toFixed(4)}`)
+    .addTo(aisLayer);
+
+  mapStats.vessels++;
+  mapStats.packets++;
+  updateMapStats();
+}
+
+function addRFSignal(freq, lat, lon, rssi) {
+  if (!rfSignalLayer) return;
+
+  const strength = Math.max(0, Math.min(1, (rssi + 100) / 50));
+  const color = strength > 0.7 ? '#27ae60' : strength > 0.4 ? '#f39c12' : '#c0392b';
+
+  const square = L.rectangle([[lat - 0.003, lon - 0.003], [lat + 0.003, lon + 0.003]], {
+    color: color,
+    weight: 2,
+    opacity: 0.7,
+    fillColor: color,
+    fillOpacity: 0.4,
+  })
+    .bindPopup(`<b>RF Signal Detection</b><br>Frequency: ${freq} MHz<br>RSSI: ${rssi.toFixed(1)} dBm<br>Lat/Lon: ${lat.toFixed(4)}, ${lon.toFixed(4)}`)
+    .addTo(rfSignalLayer);
+
+  mapStats.rfSignals++;
+  mapStats.packets++;
+  updateMapStats();
+}
+
+function updateMapStats() {
+  document.getElementById('stat-gps').textContent = mapStats.gpsPoints;
+  document.getElementById('stat-aircraft').textContent = mapStats.aircraft;
+  document.getElementById('stat-vessels').textContent = mapStats.vessels;
+  document.getElementById('stat-rf').textContent = mapStats.rfSignals;
+  document.getElementById('stat-packets').textContent = mapStats.packets;
+}
+
+function centerMapOnUser() {
+  if (mapInstance) {
+    mapInstance.setView([39.7392, -104.9903], 11);
+  }
+}
+
+function exportMapGeoJSON() {
+  const geoJSON = {
+    type: 'FeatureCollection',
+    features: [
+      ...wardrivingLayer.toGeoJSON().features,
+      ...adsbLayer.toGeoJSON().features,
+      ...aisLayer.toGeoJSON().features,
+      ...rfSignalLayer.toGeoJSON().features,
+    ],
+  };
+  
+  const blob = new Blob([JSON.stringify(geoJSON, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'strikeback_map_export.geojson';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Layer visibility toggles
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'layer-wardriving') {
+    wardrivingLayer[e.target.checked ? 'addTo' : 'removeFrom'](mapInstance);
+  }
+  if (e.target.id === 'layer-adsb') {
+    adsbLayer[e.target.checked ? 'addTo' : 'removeFrom'](mapInstance);
+  }
+  if (e.target.id === 'layer-ais') {
+    aisLayer[e.target.checked ? 'addTo' : 'removeFrom'](mapInstance);
+  }
+  if (e.target.id === 'layer-rf-signals') {
+    rfSignalLayer[e.target.checked ? 'addTo' : 'removeFrom'](mapInstance);
+  }
+});
+
+// Signal threshold slider
+document.getElementById('signal-threshold').addEventListener('input', (e) => {
+  const threshold = parseInt(e.target.value);
+  document.getElementById('threshold-display').textContent = `${threshold} dBm`;
+});
+
+// Initialize map when page loads
+setTimeout(() => {
+  initializeMap();
+  simulateWebSocketStream();
+}, 500);
+
+console.log('STRIKEBACK Unified Command Center Initialized');
+</script>
+
+</body>
+</html>
