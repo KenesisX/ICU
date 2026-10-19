@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STRIKEBACK OPS - Tactical Command Center v2.0</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<style>
+:root {
+  --dark: #0a0e27; --darker: #050811; --border: #1a2a4a; --accent: #ff2233; --neon: #00f0ff;
+  --green: #00ff66; --purple: #a122ff; --warn: #ffaa00; --gray: #7e7e8c; --success: #00ff66;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--dark); font-family: 'Courier New', monospace; color: #fff; overflow: hidden; }
+
+body::before {
+  content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: repeating-linear-gradient(0deg, rgba(0,255,255,0.03) 0px, transparent 1px);
+  pointer-events: none; z-index: 9999;
+}
+
+#container { display: grid; grid-template-columns: 280px 1fr 320px; grid-template-rows: 60px 1fr; width: 100vw; height: 100vh; }
+
+/* HEADER */
+#header {
+  grid-column: 1 / -1; background: linear-gradient(90deg, rgba(10,14,39,0.9), rgba(20,30,60,0.8));
+  border-bottom: 2px solid var(--accent); display: flex; align-items: center; padding: 0 20px;
+  box-shadow: 0 0 20px rgba(255,34,51,0.2); z-index: 100;
+}
+
+#header h1 { margin: 0; font-size: 1.2em; color: var(--accent); text-shadow: 0 0 10px var(--accent); letter-spacing: 2px; }
+#header .status { margin-left: auto; display: flex; gap: 20px; align-items: center; font-size: 0.8em; }
+.status-item { display: flex; align-items: center; gap: 6px; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; animation: pulse 2s infinite; }
+.status-dot.online { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.status-dot.warning { background: var(--warn); animation: pulse 1s infinite; }
+
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+/* LEFT SIDEBAR - TOOLS MENU */
+#sidebar-left {
+  grid-row: 2; grid-column: 1; background: var(--darker); border-right: 2px solid var(--border);
+  overflow-y: auto; padding: 15px; display: flex; flex-direction: column;
+}
+
+.tool-section { margin-bottom: 20px; }
+.section-title { font-size: 0.75em; color: var(--neon); text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+
+.tool-btn {
+  width: 100%; padding: 10px; margin-bottom: 5px; background: var(--darker); border: 1px solid var(--border);
+  color: var(--gray); cursor: pointer; font-size: 0.75em; text-align: left; transition: all 0.2s;
+  border-radius: 3px; font-family: monospace;
+}
+
+.tool-btn:hover { background: rgba(0,240,255,0.1); color: var(--neon); border-color: var(--neon); }
+.tool-btn.active { background: rgba(255,34,51,0.2); color: var(--accent); border-color: var(--accent); }
+
+/* MAIN CONTENT AREA */
+#main-content { grid-row: 2; grid-column: 2; overflow: hidden; display: flex; flex-direction: column; }
+
+/* TAB NAVIGATION */
+#content-tabs {
+  display: flex; border-bottom: 2px solid var(--border); background: rgba(10,14,39,0.8);
+  height: 45px;
+}
+
+.content-tab {
+  flex: 1; padding: 12px; border: none; background: transparent; color: var(--gray);
+  cursor: pointer; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px;
+  border-bottom: 2px solid transparent; transition: all 0.2s; font-family: monospace;
+}
+
+.content-tab:hover { color: var(--neon); }
+.content-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(255,34,51,0.05); }
+
+#content-area { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 15px; }
+
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* TOOL PANELS */
+.tool-panel {
+  background: var(--darker); border: 2px solid var(--border); padding: 12px; margin-bottom: 12px;
+  border-radius: 4px; position: relative;
+}
+
+.tool-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+
+.tool-title { color: var(--neon); font-weight: bold; font-size: 0.85em; }
+.tool-status { font-size: 0.7em; color: var(--gray); }
+
+.tool-info { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.info-box { background: rgba(0,240,255,0.05); border: 1px solid var(--border); padding: 8px; border-radius: 3px; font-size: 0.7em; }
+.info-label { color: var(--gray); display: block; margin-bottom: 2px; }
+.info-value { color: var(--neon); font-weight: bold; }
+
+.tool-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn { padding: 8px; border: 1px solid var(--border); background: transparent; color: var(--neon);
+  cursor: pointer; font-size: 0.75em; border-radius: 3px; transition: all 0.2s; font-family: monospace; }
+.btn:hover { background: rgba(0,240,255,0.1); border-color: var(--neon); }
+.btn.start { border-color: var(--green); color: var(--green); }
+.btn.start:hover { background: rgba(0,255,102,0.1); }
+.btn.stop { border-color: var(--accent); color: var(--accent); }
+.btn.stop:hover { background: rgba(255,34,51,0.1); }
+
+/* RIGHT SIDEBAR - NODES & TELEMETRY */
+#sidebar-right {
+  grid-row: 2; grid-column: 3; background: var(--darker); border-left: 2px solid var(--border);
+  overflow-y: auto; padding: 15px; display: flex; flex-direction: column;
+}
+
+.nodes-section { margin-bottom: 20px; }
+.node-item {
+  background: var(--darker); border: 1px solid var(--border); padding: 8px; margin-bottom: 6px;
+  border-radius: 3px; cursor: pointer; transition: all 0.2s;
+}
+
+.node-item:hover { border-color: var(--neon); background: rgba(0,240,255,0.05); }
+.node-item.selected { border-color: var(--accent); background: rgba(255,34,51,0.1); }
+
+.node-name { font-size: 0.75em; color: var(--neon); font-weight: bold; margin-bottom: 2px; }
+.node-ip { font-size: 0.65em; color: var(--gray); }
+.node-status { font-size: 0.6em; color: var(--green); margin-top: 2px; }
+
+.telemetry-box {
+  background: var(--darker); border: 1px solid var(--border); padding: 8px; border-radius: 3px;
+  font-size: 0.65em; margin-bottom: 8px;
+}
+
+.telem-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+.telem-label { color: var(--gray); }
+.telem-value { color: var(--neon); font-weight: bold; }
+
+/* COMMAND PALETTE */
+.cmd-palette {
+  background: var(--darker); border: 1px solid var(--border); padding: 8px; margin-top: auto;
+  border-radius: 3px;
+}
+
+.cmd-input {
+  width: 100%; background: transparent; border: 1px solid var(--border); color: var(--neon);
+  padding: 6px; font-family: monospace; font-size: 0.7em; border-radius: 2px;
+}
+
+.cmd-input::placeholder { color: var(--gray); }
+.cmd-input:focus { outline: none; border-color: var(--neon); }
+
+/* SCROLLBAR STYLING */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--darker); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--neon); }
+
+/* MODAL */
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7);
+  z-index: 1000; align-items: center; justify-content: center; }
+.modal.active { display: flex; }
+.modal-content { background: var(--darker); border: 2px solid var(--accent); padding: 20px; border-radius: 5px;
+  max-width: 600px; width: 90%; }
+.modal-title { color: var(--accent); margin-bottom: 15px; font-size: 1.1em; }
+.modal-close { float: right; cursor: pointer; color: var(--gray); font-size: 1.5em; }
+.modal-close:hover { color: var(--accent); }
+
+/* GRID FOR MULTI-COLUMN LAYOUTS */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+
+.log-viewer {
+  background: #000; border: 1px solid var(--border); padding: 10px; border-radius: 3px;
+  font-size: 0.65em; color: var(--green); line-height: 1.5; overflow-y: auto; height: 300px;
+  white-space: pre-wrap;
+}
+</style>
+</head>
+<body>
+
+<div id="container">
+  
+  <!-- HEADER -->
+  <div id="header">
+    <h1>⚡ STRIKEBACK OPS CENTER v2.0</h1>
+    <div class="status">
+      <div class="status-item">
+        <div class="status-dot online"></div>
+        <span>Connected: 12 Nodes</span>
+      </div>
+      <div class="status-item">
+        <div class="status-dot online"></div>
+        <span>Active Engagements: 3</span>
+      </div>
+      <div class="status-item">
+        <div class="status-dot warning"></div>
+        <span>Alerts: 2</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEFT SIDEBAR - TOOLS MENU -->
+  <div id="sidebar-left">
+    <div class="tool-section">
+      <div class="section-title">🔓 Credential Cracking</div>
+      <button class="tool-btn" onclick="loadTool('hashcat')">hashcat</button>
+      <button class="tool-btn" onclick="loadTool('john')">John the Ripper</button>
+      <button class="tool-btn" onclick="loadTool('hydra')">Hydra (Brute Force)</button>
+      <button class="tool-btn" onclick="loadTool('medusa')">Medusa</button>
+      <button class="tool-btn" onclick="loadTool('mimikatz')">Mimikatz</button>
+    </div>
+
+    <div class="tool-section">
+      <div class="section-title">🕵️ Network Scanning</div>
+      <button class="tool-btn" onclick="loadTool('nmap')">Nmap</button>
+      <button class="tool-btn" onclick="loadTool('masscan')">Masscan</button>
+      <button class="tool-btn" onclick="loadTool('zmap')">ZMap</button>
+      <button class="tool-btn" onclick="loadTool('netdiscover')">Netdiscover</button>
+      <button class="tool-btn" onclick="loadTool('shodan')">Shodan CLI</button>
+    </div>
+
+    <div class="tool-section">
+      <div class="section-title">📡 WiFi/Wireless</div>
+      <button class="tool-btn" onclick="loadTool('airmon')">Airmon-ng</button>
+      <button class="tool-btn" onclick="loadTool('airodump')">Airodump-ng</button>
+      <button class="tool-btn" onclick="loadTool('aireplay')">Aireplay-ng</button>
+      <button class="tool-btn" onclick="loadTool('marauder')">Marauder (M5Stack)</button>
+      <button class="tool-btn" onclick="loadTool('bettercap')">Bettercap</button>
+    </div>
+
+    <div class="tool-section">
+      <div class="section-title">📍 RF/Radio Tools</div>
+      <button class="tool-btn" onclick="loadTool('gnuradio')">GNU Radio</button>
+      <button class="tool-btn" onclick="loadTool('hackrf')">HackRF Suite</button>
+      <button class="tool-btn" onclick="loadTool('rtlsdr')">RTL-SDR</button>
+      <button class="tool-btn" onclick="loadTool('uhd')">USRP UHD</button>
+    </div>
+
+    <div class="tool-section">
+      <div class="section-title">🔐 Exploitation</div>
+      <button class="tool-btn" onclick="loadTool('metasploit')">Metasploit</button>
+      <button class="tool-btn" onclick="loadTool('evilcarry')">Evil Carry</button>
+      <button class="tool-btn" onclick="loadTool('evil-computer')">Evil Computer</button>
+      <button class="tool-btn" onclick="loadTool('cobalt')">Cobalt Strike</button>
+    </div>
+
+    <div class="tool-section">
+      <div class="section-title">🔎 Forensics</div>
+      <button class="tool-btn" onclick="loadTool('volatility')">Volatility</button>
+      <button class="tool-btn" onclick="loadTool('autopsy')">Autopsy</button>
+      <button class="tool-btn" onclick="loadTool('sleuthkit')">Sleuth Kit</button>
+      <button class="tool-btn" onclick="loadTool('wireshark')">Wireshark</button>
+    </div>
+
+    <div class="tool-section">
+      <div class="section-title">🛠️ Utilities</div>
+      <button class="tool-btn" onclick="loadTool('burp')">Burp Suite</button>
+      <button class="tool-btn" onclick="loadTool('owasp')">OWASP ZAP</button>
+      <button class="tool-btn" onclick="loadTool('sqlmap')">SQLMap</button>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="main-content">
+    <div id="content-tabs">
+      <button class="content-tab active" onclick="switchTab('overview')">📊 OVERVIEW</button>
+      <button class="content-tab" onclick="switchTab('tools')">🔧 ACTIVE TOOLS</button>
+      <button class="content-tab" onclick="switchTab('logs')">📋 ENGAGEMENT LOG</button>
+      <button class="content-tab" onclick="switchTab('campaign')">📅 CAMPAIGNS</button>
+      <button class="content-tab" onclick="switchTab('reporting')">📈 REPORTS</button>
+    </div>
+    
+    <div id="content-area">
+      
+      <!-- OVERVIEW TAB -->
+      <div id="overview-pane" class="tab-pane active">
+        <h2 style="color: var(--accent); margin-top: 0;">Active Operations Dashboard</h2>
+        
+        <div class="grid-2">
+          <div class="tool-panel">
+            <div class="tool-header">
+              <span class="tool-title">📊 Campaign Status</span>
+              <span class="tool-status">3 Active</span>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Project: Acme Corp Pentest</span>
+              <span class="info-value">72% Complete</span>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Project: Financial Inst. Audit</span>
+              <span class="info-value">45% Complete</span>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Project: Government Assessment</span>
+              <span class="info-value">18% Complete</span>
+            </div>
+          </div>
+
+          <div class="tool-panel">
+            <div class="tool-header">
+              <span class="tool-title">🎯 Engagement Metrics</span>
+              <span class="tool-status">Real-time</span>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Hosts Discovered</span>
+              <span class="info-value">487</span>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Vulnerabilities Found</span>
+              <span class="info-value">34 (8 Critical)</span>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Successful Exploits</span>
+              <span class="info-value">12</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-panel">
+          <div class="tool-header">
+            <span class="tool-title">🔴 Alert System</span>
+            <span class="tool-status">2 Active Alerts</span>
+          </div>
+          <div class="info-box" style="border-left: 3px solid var(--warn);">
+            <span class="info-label">⚠️ Target IDS Triggered</span>
+            <span class="info-value">192.168.1.50 - Detection Risk: HIGH</span>
+          </div>
+          <div class="info-box" style="border-left: 3px solid var(--accent);">
+            <span class="info-label">🚨 Anomalous Activity</span>
+            <span class="info-value">Unexpected logout spike detected</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIVE TOOLS TAB -->
+      <div id="tools-pane" class="tab-pane">
+        <h2 style="color: var(--accent); margin-top: 0;">Tool Orchestration Console</h2>
+        
+        <div id="active-tool-display" class="tool-panel">
+          <div class="tool-header">
+            <span class="tool-title" id="current-tool-name">Nmap Port Scanner</span>
+            <span class="tool-status" id="current-tool-status">Ready</span>
+          </div>
+          
+          <div class="grid-2">
+            <div class="info-box">
+              <span class="info-label">Target(s)</span>
+              <span class="info-value" id="tool-target">192.168.1.0/24</span>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Scan Type</span>
+              <span class="info-value" id="tool-type">SYN Stealth</span>
+            </div>
+          </div>
+
+          <div class="tool-controls">
+            <button class="btn start" onclick="startTool()">▶ START</button>
+            <button class="btn stop" onclick="stopTool()">⏹ STOP</button>
+            <button class="btn" onclick="openToolConfig()">⚙️ CONFIG</button>
+            <button class="btn" onclick="exportResults()">📤 EXPORT</button>
+          </div>
+
+          <h3 style="margin-top: 15px; color: var(--neon);">Live Output:</h3>
+          <div class="log-viewer" id="tool-output">[*] Initializing scan...
+[*] 192.168.1.1:22 - SSH
+[*] 192.168.1.5:80 - HTTP
+[*] 192.168.1.5:443 - HTTPS
+[*] 192.168.1.15:3389 - RDP
+[*] 192.168.1.20:135 - Windows RPC
+[+] Scan complete: 23 hosts, 47 open ports
+          </div>
+        </div>
+      </div>
+
+      <!-- ENGAGEMENT LOG TAB -->
+      <div id="logs-pane" class="tab-pane">
+        <h2 style="color: var(--accent); margin-top: 0;">Authorization & Activity Log</h2>
+        
+        <div class="tool-panel">
+          <div class="tool-header">
+            <span class="tool-title">📋 Engagement Record</span>
+            <span class="tool-status">Authorized</span>
+          </div>
+          <div class="info-box">
+            <span class="info-label">Client</span>
+            <span class="info-value">Acme Corporation</span>
+          </div>
+          <div class="info-box">
+            <span class="info-label">Scope</span>
+            <span class="info-value">192.168.1.0/24, 10.0.0.0/8</span>
+          </div>
+          <div class="info-box">
+            <span class="info-label">Authorization</span>
+            <span class="info-value" style="color: var(--green);">✓ Signed ROE</span>
+          </div>
+          <div class="info-box">
+            <span class="info-label">Engagement Period</span>
+            <span class="info-value">2024-09-15 to 2024-09-30</span>
+          </div>
+        </div>
+
+        <h3 style="color: var(--neon); margin-top: 15px;">Operation Timeline:</h3>
+        <div class="log-viewer">[2024-09-22 14:30] Engagement authorized - ROE signed
+[2024-09-22 14:35] Nmap scan initiated (192.168.1.0/24)
+[2024-09-22 14:42] Initial reconnaissance complete - 23 hosts found
+[2024-09-22 15:00] Vulnerability assessment started (OpenVAS)
+[2024-09-22 15:45] SQL injection found on 192.168.1.5:80
+[2024-09-22 16:00] Metasploit payload deployment (authorized target)
+[2024-09-22 16:15] Post-exploitation enumeration
+[2024-09-22 16:30] Data exfiltration test (authorized)
+[2024-09-22 17:00] All findings documented
+[2024-09-22 17:30] Client notification - debrief scheduled
+        </div>
+      </div>
+
+      <!-- CAMPAIGNS TAB -->
+      <div id="campaign-pane" class="tab-pane">
+        <h2 style="color: var(--accent); margin-top: 0;">Engagement Campaigns</h2>
+        
+        <div class="grid-3">
+          <div class="tool-panel">
+            <div class="tool-header">
+              <span class="tool-title">Acme Corp Pentest</span>
+              <span class="tool-status">ACTIVE</span>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Start Date</span>
+              <span class="info-value">2024-09-15</span>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Progress</span>
+              <span class="info-value">72%</span>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Findings</span>
+              <span class="info-value">8 Vulnerabilities</span>
+            </div>
+            <button class="btn" style="margin-top: 8px;">📊 View Details</button>
+          </div>
+
+          <div class="tool-panel">
+            <div class="tool-header">
+              <span class="tool-title">Financial Audit</span>
+              <span class="tool-status">ACTIVE</span>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Start Date</span>
+              <span class="info-value">2024-09-10</span>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Progress</span>
+              <span class="info-value">45%</span>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Findings</span>
+              <span class="info-value">12 Vulnerabilities</span>
+            </div>
+            <button class="btn" style="margin-top: 8px;">📊 View Details</button>
+          </div>
+
+          <div class="tool-panel">
+            <div class="tool-header">
+              <span class="tool-title">Government Assessment</span>
+              <span class="tool-status">ACTIVE</span>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Start Date</span>
+              <span class="info-value">2024-09-01</span>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Progress</span>
+              <span class="info-value">18%</span>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Findings</span>
+              <span class="info-value">3 Vulnerabilities</span>
+            </div>
+            <button class="btn" style="margin-top: 8px;">📊 View Details</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPORTING TAB -->
+      <div id="reporting-pane" class="tab-pane">
+        <h2 style="color: var(--accent); margin-top: 0;">Report Generation & Exports</h2>
+        
+        <div class="grid-2">
+          <div class="tool-panel">
+            <div class="tool-header">
+              <span class="tool-title">📄 Report Templates</span>
+            </div>
+            <button class="btn" onclick="generateReport('executive')">Executive Summary</button>
+            <button class="btn" onclick="generateReport('technical')">Technical Findings</button>
+            <button class="btn" onclick="generateReport('remediation')">Remediation Guide</button>
+            <button class="btn" onclick="generateReport('cvss')">CVSS Risk Matrix</button>
+          </div>
+
+          <div class="tool-panel">
+            <div class="tool-header">
+              <span class="tool-title">💾 Export Formats</span>
+            </div>
+            <button class="btn" onclick="exportData('pdf')">📑 Export PDF</button>
+            <button class="btn" onclick="exportData('docx')">📝 Export DOCX</button>
+            <button class="btn" onclick="exportData('json')">📊 Export JSON</button>
+            <button class="btn" onclick="exportData('csv')">📋 Export CSV</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RIGHT SIDEBAR - NODES & TELEMETRY -->
+  <div id="sidebar-right">
+    <h3 style="margin-top: 0; color: var(--neon);">🖧 Remote Nodes</h3>
+    
+    <div class="nodes-section">
+      <div class="node-item selected" onclick="selectNode(this, 'esp32-01')">
+        <div class="node-name">ESP32 Relay-1</div>
+        <div class="node-ip">192.168.1.50</div>
+        <div class="node-status">● Online (WiFi)</div>
+      </div>
+      <div class="node-item" onclick="selectNode(this, 'rpi-01')">
+        <div class="node-name">RPi Scanner</div>
+        <div class="node-ip">192.168.1.60</div>
+        <div class="node-status">● Online (Eth)</div>
+      </div>
+      <div class="node-item" onclick="selectNode(this, 'rpi-02')">
+        <div class="node-name">RPi Cracker</div>
+        <div class="node-ip">192.168.1.61</div>
+        <div class="node-status">● Online (Eth)</div>
+      </div>
+      <div class="node-item" onclick="selectNode(this, 'jetson-01')">
+        <div class="node-name">Jetson Edge</div>
+        <div class="node-ip">10.0.0.5</div>
+        <div class="node-status">● Online (VPN)</div>
+      </div>
+      <div class="node-item" onclick="selectNode(this, 'm5stack')">
+        <div class="node-name">M5Stack Marauder</div>
+        <div class="node-ip">192.168.1.100</div>
+        <div class="node-status">● Online (BLE/WiFi)</div>
+      </div>
+    </div>
+
+    <h3 style="color: var(--neon);">📡 Node Telemetry</h3>
+    <div class="telemetry-box">
+      <div class="telem-row">
+        <span class="telem-label">CPU Load:</span>
+        <span class="telem-value">34%</span>
+      </div>
+      <div class="telem-row">
+        <span class="telem-label">Memory:</span>
+        <span class="telem-value">2.1GB</span>
+      </div>
+      <div class="telem-row">
+        <span class="telem-label">Network I/O:</span>
+        <span class="telem-value">24.5Mbps</span>
+      </div>
+      <div class="telem-row">
+        <span class="telem-label">Uptime:</span>
+        <span class="telem-value">47h 23m</span>
+      </div>
+      <div class="telem-row">
+        <span class="telem-label">Signal Quality:</span>
+        <span class="telem-value">92%</span>
+      </div>
+    </div>
+
+    <h3 style="color: var(--neon); margin-top: 15px;">📍 Frequency Monitor</h3>
+    <div class="telemetry-box">
+      <div class="telem-row">
+        <span class="telem-label">WiFi 2.4GHz:</span>
+        <span class="telem-value">-42dB</span>
+      </div>
+      <div class="telem-row">
+        <span class="telem-label">WiFi 5GHz:</span>
+        <span class="telem-value">-48dB</span>
+      </div>
+      <div class="telem-row">
+        <span class="telem-label">Cellular:</span>
+        <span class="telem-value">-65dB</span>
+      </div>
+      <div class="telem-row">
+        <span class="telem-label">BLE:</span>
+        <span class="telem-value">-55dB</span>
+      </div>
+    </div>
+
+    <h3 style="color: var(--neon); margin-top: 15px;">⚙️ Quick Commands</h3>
+    <div class="cmd-palette">
+      <input type="text" class="cmd-input" id="cmd-input" placeholder="Command palette...">
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL FOR TOOL CONFIG -->
+<div id="tool-config-modal" class="modal">
+  <div class="modal-content">
+    <span class="modal-close" onclick="closeModal()">&times;</span>
+    <div class="modal-title">⚙️ Tool Configuration</div>
+    <div style="font-size: 0.75em; color: var(--gray);">
+      <label>Target(s):</label>
+      <input type="text" value="192.168.1.0/24" style="width: 100%; padding: 6px; background: var(--darker); border: 1px solid var(--border); color: var(--neon); margin-bottom: 10px;">
+      
+      <label>Scan Type:</label>
+      <select style="width: 100%; padding: 6px; background: var(--darker); border: 1px solid var(--border); color: var(--neon); margin-bottom: 10px;">
+        <option>SYN Stealth</option>
+        <option>Full Connect</option>
+        <option>UDP Scan</option>
+        <option>Aggressive</option>
+      </select>
+
+      <label>Timing Template:</label>
+      <select style="width: 100%; padding: 6px; background: var(--darker); border: 1px solid var(--border); color: var(--neon); margin-bottom: 15px;">
+        <option>Sneaky</option>
+        <option>Polite</option>
+        <option>Normal</option>
+        <option>Aggressive</option>
+        <option>Insane</option>
+      </select>
+
+      <button class="btn start" onclick="closeModal()">✓ Save Configuration</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Tool system
+let currentTool = 'nmap';
+let selectedNode = 'esp32-01';
+let toolRunning = false;
+
+function loadTool(toolName) {
+  currentTool = toolName;
+  
+  const toolConfigs = {
+    hashcat: { name: 'Hashcat', type: 'MD5 Hash Cracking', target: 'hashes.txt' },
+    john: { name: 'John the Ripper', type: 'Password Cracking', target: '/etc/shadow' },
+    hydra: { name: 'Hydra', type: 'SSH Brute Force', target: '192.168.1.50:22' },
+    nmap: { name: 'Nmap Port Scanner', type: 'SYN Stealth', target: '192.168.1.0/24' },
+    masscan: { name: 'Masscan', type: 'High-speed scan', target: '192.168.0.0/16' },
+    airmon: { name: 'Airmon-ng', type: 'WiFi Monitor Mode', target: 'wlan0' },
+    marauder: { name: 'Marauder Suite', type: 'BLE/WiFi Attack', target: 'M5Stack' },
+    metasploit: { name: 'Metasploit', type: 'Exploit Framework', target: '192.168.1.5' },
+    wireshark: { name: 'Wireshark', type: 'Packet Capture', target: 'eth0' },
+    burp: { name: 'Burp Suite', type: 'Web Proxy', target: 'http://target.local' }
+  };
+  
+  const config = toolConfigs[toolName] || { name: toolName, type: 'Unknown', target: '?' };
+  
+  document.getElementById('current-tool-name').textContent = config.name;
+  document.getElementById('tool-type').textContent = config.type;
+  document.getElementById('tool-target').textContent = config.target;
+  document.getElementById('current-tool-status').textContent = 'Ready';
+  
+  // Add to toolbar
+  document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  // Switch to tools tab
+  switchTab('tools');
+}
+
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+  document.querySelectorAll('.content-tab').forEach(tab => tab.classList.remove('active'));
+  
+  document.getElementById(tabName + '-pane').classList.add('active');
+  event.target.classList.add('active');
+}
+
+function startTool() {
+  if (toolRunning) return;
+  toolRunning = true;
+  document.getElementById('current-tool-status').textContent = 'RUNNING';
+  document.getElementById('current-tool-status').style.color = 'var(--green)';
+  
+  // Simulate tool output
+  const output = document.getElementById('tool-output');
+  output.textContent += '\n[+] Deployment to ' + selectedNode + ' initiated...\n[*] Executing on remote node...\n';
+  setTimeout(() => {
+    output.textContent += '[+] Results received from remote\n[✓] Task completed successfully';
+    toolRunning = false;
+    document.getElementById('current-tool-status').textContent = 'IDLE';
+    document.getElementById('current-tool-status').style.color = 'var(--gray)';
+  }, 2000);
+}
+
+function stopTool() {
+  toolRunning = false;
+  document.getElementById('current-tool-status').textContent = 'STOPPED';
+  document.getElementById('current-tool-status').style.color = 'var(--accent)';
+}
+
+function openToolConfig() {
+  document.getElementById('tool-config-modal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('tool-config-modal').classList.remove('active');
+}
+
+function selectNode(element, nodeId) {
+  document.querySelectorAll('.node-item').forEach(node => node.classList.remove('selected'));
+  element.classList.add('selected');
+  selectedNode = nodeId;
+}
+
+function exportResults() {
+  alert('Exporting results from ' + selectedNode + '...');
+}
+
+function generateReport(type) {
+  alert('Generating ' + type + ' report for current engagement...');
+}
+
+function exportData(format) {
+  alert('Exporting findings as ' + format.toUpperCase() + '...');
+}
+
+// Command palette
+document.getElementById('cmd-input').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    const cmd = this.value;
+    console.log('Command: ' + cmd);
+    this.value = '';
+  }
+});
+</script>
+
+</body>
+</html>
