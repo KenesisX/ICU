@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>🔥 SENTINEL NEXUS - STRIKEBACK TECH FULL SUITE // KENESIS_X</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<style>
+:root {
+  --bg: #0a0e27; --panel-bg: rgba(10, 14, 39, 0.98); --card-bg: #050811;
+  --border: #1a2a4a; --accent: #ff2233; --neon: #00f0ff; --green: #00ff66; --purple: #a122ff; --gray: #7e7e8c;
+  --success: #00ff66; --warning: #ffaa00; --danger: #ff2233;
+}
+
+* { box-sizing: border-box; }
+body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); font-family: 'Courier New', Courier, monospace; overflow: hidden; color: #fff; }
+
+/* Scanlines effect overlay */
+body::before {
+  content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: repeating-linear-gradient(0deg, rgba(0,255,255,0.03) 0px, rgba(0,255,255,0.03) 1px, transparent 1px, transparent 2px);
+  pointer-events: none; z-index: 9999;
+}
+
+#app-container { display: flex; flex-direction: column; width: 100vw; height: 100vh; position: relative; }
+
+/* TAB NAVIGATION SYSTEM */
+#tab-navigation {
+  display: flex; background: linear-gradient(90deg, var(--panel-bg) 0%, rgba(10,14,39,0.7) 100%);
+  border-bottom: 2px solid var(--accent); padding: 0; margin: 0; height: 45px;
+  z-index: 100; box-shadow: 0 0 20px rgba(255,34,51,0.2);
+}
+
+.tab-button {
+  flex: 1; padding: 12px; border: none; background: transparent; color: var(--gray); cursor: pointer;
+  font-family: monospace; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px;
+  border-bottom: 2px solid transparent; transition: all 0.3s;
+  position: relative; text-align: center;
+}
+
+.tab-button:hover { color: var(--neon); text-shadow: 0 0 10px rgba(0,240,255,0.5); }
+.tab-button.active {
+  color: var(--accent); border-bottom-color: var(--accent);
+  background: rgba(255,34,51,0.1); text-shadow: 0 0 15px rgba(255,34,51,0.6);
+}
+
+.tab-button::before {
+  content: ''; position: absolute; top: -2px; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0; transition: opacity 0.3s;
+}
+
+.tab-button.active::before { opacity: 1; }
+
+/* TAB CONTENT AREAS */
+.tab-content {
+  display: none; flex: 1; width: 100%; overflow: hidden;
+}
+
+.tab-content.active { display: flex; flex-direction: column; }
+
+/* ==== VISUALIZER TAB ==== */
+#visualizer-tab { display: flex; flex-direction: row; }
+
+#upper-dual-decks {
+  display: grid; grid-template-columns: 1fr 1fr; height: 40%; width: 100%;
+  border-bottom: 2px solid var(--border); background: var(--panel-bg);
+}
+
+.telemetry-deck {
+  display: flex; flex-direction: column; height: 100%; border-right: 1px solid var(--border);
+  overflow-y: auto; padding: 10px; position: relative;
+}
+
+.telemetry-deck::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,255,255,0.02) 0px, transparent 1px);
+  pointer-events: none;
+}
+
+#lower-split-arena {
+  display: grid; grid-template-columns: 1fr 250px; height: 60%; width: 100%;
+}
+
+#lower-map-viewport { width: 100%; height: 100%; position: relative; background: #020205; }
+#waterfall-sidebar {
+  width: 100%; height: 100%; background: #040408; border-left: 2px solid var(--border);
+  display: flex; flex-direction: column; padding: 8px; overflow: hidden;
+}
+
+/* ==== ARP SCANNER TAB ==== */
+#arp-container {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; overflow-y: auto;
+}
+
+#arp-scan-panel {
+  background: var(--panel-bg); border: 2px solid var(--border); padding: 15px; border-radius: 5px;
+  display: flex; flex-direction: column;
+}
+
+#arp-results {
+  flex: 1; background: var(--card-bg); border: 1px solid var(--border); padding: 10px;
+  overflow-y: auto; font-size: 0.75em; line-height: 1.4;
+}
+
+#arp-device-details {
+  background: var(--panel-bg); border: 2px solid var(--neon); padding: 15px; border-radius: 5px;
+  display: flex; flex-direction: column;
+}
+
+.arp-device {
+  background: var(--card-bg); border-left: 3px solid var(--neon); padding: 8px; margin-bottom: 8px;
+  cursor: pointer; transition: all 0.2s; border-radius: 2px;
+}
+
+.arp-device:hover { background: rgba(0,240,255,0.1); border-left-color: var(--accent); }
+.arp-device.selected { background: rgba(255,34,51,0.1); border-left-color: var(--accent); }
+
+/* ==== SDR TAB ==== */
+#sdr-container {
+  display: grid; grid-template-columns: 1.5fr 1fr; gap: 15px; padding: 15px; overflow-y: auto;
+}
+
+#frequency-analyzer {
+  background: var(--panel-bg); border: 2px solid var(--border); padding: 15px; border-radius: 5px;
+  display: flex; flex-direction: column;
+}
+
+#freq-canvas { background: #000; border: 1px solid var(--border); margin: 10px 0; flex: 1; }
+
+#signal-details {
+  background: var(--panel-bg); border: 2px solid var(--purple); padding: 15px; border-radius: 5px;
+  display: flex; flex-direction: column;
+}
+
+.frequency-row {
+  display: flex; justify-content: space-between; padding: 6px; background: var(--card-bg);
+  border: 1px solid var(--border); margin-bottom: 5px; border-radius: 2px; font-size: 0.8em;
+}
+
+.signal-strength { display: flex; align-items: center; gap: 8px; font-size: 0.7em; }
+
+.strength-bar {
+  width: 60px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden;
+}
+
+.strength-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--neon), var(--accent)); }
+
+/* ==== DIAGNOSTICS TAB ==== */
+#diagnostics-container {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; padding: 15px; overflow-y: auto;
+}
+
+.diag-panel {
+  background: var(--panel-bg); border: 2px solid var(--border); padding: 12px; border-radius: 5px;
+  display: flex; flex-direction: column;
+}
+
+.diag-stat {
+  display: flex; justify-content: space-between; padding: 6px; border-bottom: 1px solid var(--border);
+  font-size: 0.75em;
+}
+
+.diag-stat-label { color: var(--gray); }
+.diag-stat-value { color: var(--neon); font-weight: bold; }
+
+#system-log {
+  background: var(--card-bg); border: 1px solid var(--border); padding: 10px;
+  overflow-y: auto; font-size: 0.7em; line-height: 1.6; color: var(--green);
+}
+
+/* ==== GLOBAL COMPONENTS ==== */
+h3 { color: var(--accent); margin: 0 0 8px 0; font-size: 0.8em; text-transform: uppercase;
+  letter-spacing: 1px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+
+h4 { color: var(--neon); margin: 8px 0 6px 0; font-size: 0.75em; }
+
+.data-box { background: var(--card-bg); border: 1px solid var(--border); padding: 8px; border-radius: 3px;
+  margin-bottom: 8px; font-size: 0.7em; }
+
+.row { display: flex; justify-content: space-between; margin-bottom: 3px; color: var(--gray); }
+.row span { color: #fff; font-weight: bold; }
+
+.btn {
+  background: var(--accent); color: #000; font-weight: bold; text-transform: uppercase; border: none;
+  padding: 10px; border-radius: 3px; cursor: pointer; width: 100%; font-size: 0.75em; font-family: monospace;
+  margin-bottom: 8px; transition: all 0.2s; box-shadow: 0 0 10px rgba(255,34,51,0.3);
+}
+
+.btn:hover { background: #ff3344; box-shadow: 0 0 20px rgba(255,34,51,0.6); }
+.btn:active { transform: scale(0.98); }
+
+.btn-alt { background: transparent; color: var(--neon); border: 1px solid var(--neon); box-shadow: 0 0 10px rgba(0,240,255,0.2); }
+.btn-alt:hover { background: rgba(0,240,255,0.1); box-shadow: 0 0 20px rgba(0,240,255,0.5); }
+
+.btn-success { background: var(--green); color: #000; box-shadow: 0 0 10px rgba(0,255,102,0.3); }
+.btn-success:hover { box-shadow: 0 0 20px rgba(0,255,102,0.6); }
+
+#canvas-waterfall { background: #000; border: 1px solid #111; flex: 1; width: 100%; }
+#strobe-perimeter { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:90; }
+.breach-flash { border: 10px solid var(--accent); background: rgba(255,34,51,0.05); }
+
+/* GLITCH EFFECT */
+.glitch {
+  animation: glitch 0.3s infinite;
+  text-shadow: -2px 0 var(--neon), 2px 0 var(--accent);
+}
+
+@keyframes glitch {
+  0%, 100% { clip-path: inset(0 0 0 0); }
+  20% { clip-path: inset(0 0 100% 0); }
+  40% { clip-path: inset(0 0 50% 0); }
+  60% { clip-path: inset(0 0 30% 0); }
+  80% { clip-path: inset(0 0 10% 0); }
+}
+
+/* PULSE ANIMATION */
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.pulse { animation: pulse 1s infinite; }
+
+/* TERMINAL STYLE */
+.terminal { background: #000; border: 1px solid var(--border); padding: 8px; color: var(--green);
+  font-size: 0.65em; font-family: monospace; overflow-y: auto; white-space: pre-wrap; }
+
+/* RESPONSIVE */
+@media(max-width: 1200px) {
+  #arp-container, #sdr-container, #diagnostics-container { grid-template-columns: 1fr; }
+  #upper-dual-decks { grid-template-columns: 1fr; height: 50%; }
+  #lower-split-arena { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="app-container">
+  
+  <!-- TAB NAVIGATION -->
+  <div id="tab-navigation">
+    <button class="tab-button active" data-tab="visualizer">🎯 RF VISUALIZER</button>
+    <button class="tab-button" data-tab="arp">📡 ARP SCANNER</button>
+    <button class="tab-button" data-tab="sdr">📻 SDR ANALYSIS</button>
+    <button class="tab-button" data-tab="diagnostics">⚙️ DIAGNOSTICS</button>
+  </div>
+
+  <!-- ======== VISUALIZER TAB ======== -->
+  <div id="visualizer-tab" class="tab-content active">
+    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
+      <div id="upper-dual-decks">
+        <div class="telemetry-deck">
+          <h3>📡 Infinite Multi-Hop Node Matrix</h3>
+          <div class="data-box">
+            <div class="row">Active Nodes: <span id="mesh-nodes-counter" style="color:var(--green);">4 Online</span></div>
+            <div class="row">Coverage: <span style="color:var(--purple);">Extended Range</span></div>
+            <div class="row">Spectral Sweep: <span style="color:var(--neon);">WiFi-CSI + BLE + LoRa</span></div>
+          </div>
+          <div id="mesh-link-logs" style="flex: 1; overflow-y: auto; font-size: 0.65em; color: var(--green);"></div>
+          <button class="btn btn-alt" onclick="cascadeNewRemoteNode()">⚡ Cascade Node</button>
+        </div>
+        <div class="telemetry-deck" style="border-right:none;">
+          <h3>🤖 Target Resolver</h3>
+          <div class="data-box" style="border-color: var(--neon);">
+            <div id="target-lbl-name" style="font-weight:bold; color:var(--neon); margin-bottom:4px; font-size:0.95em;">Scanning RF Matrix...</div>
+            <div class="row">Domain: <span id="target-domain-class">--</span></div>
+            <div class="row">Dimensions: <span id="target-dimensions">--</span></div>
+            <div class="row">Signal/Pulse: <span id="target-vitals-pulse" style="color:var(--accent);">--</span></div>
+          </div>
+          <div id="gemini-ai-diagnostics" style="font-size:0.65em; background:#000; border:1px solid var(--border);
+            padding:8px; color:var(--green); flex: 1; overflow-y:auto;">[*] Array scanning active.
+[+] RF wave fronts detected.
+[+] Click 3D elements for analysis.</div>
+        </div>
+      </div>
+      <div id="lower-split-arena">
+        <div id="lower-map-viewport">
+          <div id="strobe-perimeter"></div>
+        </div>
+        <div id="waterfall-sidebar">
+          <h3 style="font-size:0.7em; margin-bottom:4px;">📻 Spectral Activity</h3>
+          <canvas id="canvas-waterfall"></canvas>
+          <div style="font-size:0.58em; color:var(--gray); text-align:center; margin-top:4px;">Channels 1-165</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== ARP SCANNER TAB ======== -->
+  <div id="arp-tab" class="tab-content">
+    <div id="arp-container">
+      <div id="arp-scan-panel">
+        <h3>🔍 Network Discovery</h3>
+        <div class="data-box">
+          <div class="row">Target Range: <span id="arp-range">192.168.0.0/24</span></div>
+          <div class="row">Scan Type: <span style="color:var(--green);">ARP Request</span></div>
+          <div class="row">Timeout: <span>1000ms</span></div>
+        </div>
+        <button class="btn btn-success" onclick="startARPScan()">▶ START SCAN</button>
+        <button class="btn btn-alt" onclick="clearARPResults()">⟳ CLEAR</button>
+        <h4>Discovered Devices:</h4>
+        <div id="arp-results">
+[*] Ready for network scan...
+        </div>
+      </div>
+      <div id="arp-device-details">
+        <h3>📊 Selected Device Analysis</h3>
+        <div id="device-info" class="data-box" style="flex: 1; overflow-y: auto; font-size: 0.7em;">
+<strong>IP Address:</strong> Select device to analyze
+<strong>MAC Address:</strong> --
+<strong>Vendor:</strong> --
+<strong>Hostname:</strong> --
+<strong>Services:</strong> --
+<strong>Open Ports:</strong> --
+        </div>
+        <button class="btn btn-alt" onclick="probeDevice()">🔎 PROBE DEVICE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== SDR ANALYSIS TAB ======== -->
+  <div id="sdr-tab" class="tab-content">
+    <div id="sdr-container">
+      <div id="frequency-analyzer">
+        <h3>📻 Frequency Spectrum Analyzer</h3>
+        <div class="data-box">
+          <div class="row">Freq Range: <span id="freq-range">88 - 1000 MHz</span></div>
+          <div class="row">Sample Rate: <span id="sample-rate">2.4 MSPS</span></div>
+          <div class="row">Bandwidth: <span id="bandwidth">20 MHz</span></div>
+        </div>
+        <canvas id="freq-canvas"></canvas>
+        <button class="btn btn-success" onclick="startFrequencyScan()">▶ SCAN SPECTRUM</button>
+      </div>
+      <div id="signal-details">
+        <h3>📈 Signal Analysis</h3>
+        <h4>Active Signals:</h4>
+        <div id="signal-list" style="flex: 1; overflow-y: auto;">
+          <div class="frequency-row">
+            <span>FM Radio</span>
+            <div class="signal-strength">
+              <span>-35dB</span>
+              <div class="strength-bar"><div class="strength-fill" style="width:85%;"></div></div>
+            </div>
+          </div>
+          <div class="frequency-row">
+            <span>WiFi 2.4GHz</span>
+            <div class="signal-strength">
+              <span>-45dB</span>
+              <div class="strength-bar"><div class="strength-fill" style="width:65%;"></div></div>
+            </div>
+          </div>
+          <div class="frequency-row">
+            <span>Cellular Band</span>
+            <div class="signal-strength">
+              <span>-52dB</span>
+              <div class="strength-bar"><div class="strength-fill" style="width:45%;"></div></div>
+            </div>
+          </div>
+        </div>
+        <h4 style="margin-top: 10px;">Modulation Detected:</h4>
+        <div style="font-size: 0.75em; color: var(--neon); padding: 8px; background: var(--card-bg); border-radius: 3px;">
+FM, PSK, FSK, QPSK detected
+        </div>
+        <button class="btn btn-alt" onclick="analyzeSignal()" style="margin-top: 10px;">🔬 DEEP ANALYZE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== DIAGNOSTICS TAB ======== -->
+  <div id="diagnostics-tab" class="tab-content">
+    <div id="diagnostics-container">
+      <div class="diag-panel">
+        <h3>🖥️ System Status</h3>
+        <div class="diag-stat">
+          <span class="diag-stat-label">CPU Usage:</span>
+          <span class="diag-stat-value">24%</span>
+        </div>
+        <div class="diag-stat">
+          <span class="diag-stat-label">Memory:</span>
+          <span class="diag-stat-value" style="color:var(--success);">1.2GB / 8GB</span>
+        </div>
+        <div class="diag-stat">
+          <span class="diag-stat-label">GPU Load:</span>
+          <span class="diag-stat-value">18%</span>
+        </div>
+        <div class="diag-stat">
+          <span class="diag-stat-label">Network I/O:</span>
+          <span class="diag-stat-value" style="color:var(--warning);">124 Mbps</span>
+        </div>
+        <div class="diag-stat">
+          <span class="diag-stat-label">Uptime:</span>
+          <span class="diag-stat-value">23h 47m</span>
+        </div>
+        <div class="diag-stat">
+          <span class="diag-stat-label">Threat Level:</span>
+          <span class="diag-stat-value" style="color:var(--success);">CLEAR</span>
+        </div>
+      </div>
+      <div class="diag-panel">
+        <h3>🔒 Security Modules</h3>
+        <div class="diag-stat">
+          <span class="diag-stat-label">Encryption:</span>
+          <span class="diag-stat-value" style="color:var(--success);">ACTIVE</span>
+        </div>
+        <div class="diag-stat">
+          <span class="diag-stat-label">Firewall:</span>
+          <span class="diag-stat-value" style="color:var(--success);">ARMED</span>
+        </div>
+        <div class="diag-stat">
+          <span class="diag-stat-label">IDS Status:</span>
+          <span class="diag-stat-value" style="color:var(--success);">MONITORING</span>
+        </div>
+        <div class="diag-stat">
+          <span class="diag-stat-label">Intrusions:</span>
+          <span class="diag-stat-value" style="color:var(--success);">0 Detected</span>
+        </div>
+        <div class="diag-stat">
+          <span class="diag-stat-label">Last Scan:</span>
+          <span class="diag-stat-value">2 min ago</span>
+        </div>
+      </div>
+      <div class="diag-panel">
+        <h3>📊 Activity Log</h3>
+        <div id="system-log">[00:15] System boot complete
+[00:16] Loading network modules
+[00:17] RF scanning enabled
+[00:18] SDR module initialized
+[00:19] ARP scanner ready
+[02:34] Spectral anomaly detected
+[02:35] Threat assessment: NONE
+[12:45] Routine scan executed
+[12:46] No vulnerabilities found</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================================
+// TAB SYSTEM LOGIC
+// ============================================================================
+const ENCRYPTION_SECRET_KEY = "KENESIS_X_STRIKE_BACK_SECURE_PHRASE_KEY_ABC123";
+
+document.querySelectorAll('.tab-button').forEach(button => {
+  button.addEventListener('click', () => {
+    const tabName = button.getAttribute('data-tab');
+    switchTab(tabName);
+  });
+});
+
+function switchTab(tabName) {
+  // Hide all tabs
+  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+  document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+  
+  // Show selected tab
+  const tabId = tabName + '-tab';
+  const tabElement = document.getElementById(tabId);
+  if (tabElement) {
+    tabElement.classList.add('active');
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    
+    // Initialize tab-specific logic
+    if (tabName === 'visualizer' && !window.visualizerInitialized) {
+      initializeVisualizer();
+      window.visualizerInitialized = true;
+    }
+  }
+}
+
+// ============================================================================
+// VISUALIZER INITIALIZATION & THREE.JS SETUP
+// ============================================================================
+let window_visualizerInitialized = false;
+let scene, camera, renderer, controls, visualTargetsMap = new Map(), visualNodesMap = new Map();
+
+function initializeVisualizer() {
+  if (!window.visualizerInitialized) return;
+  
+  const container = document.getElementById('lower-map-viewport');
+  if (!container || container.clientWidth === 0) {
+    setTimeout(initializeVisualizer, 100);
+    return;
+  }
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x020205);
+  
+  camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 10000);
+  camera.position.set(0, 40, 60);
+  
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.shadowMap.enabled = true;
+  container.appendChild(renderer.domElement);
+  
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 2;
+  
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+  scene.add(ambientLight);
+  
+  const pointLight = new THREE.PointLight(0x00ff66, 1);
+  pointLight.position.set(50, 80, 50);
+  scene.add(pointLight);
+  
+  const gridHelper = new THREE.GridHelper(200, 20);
+  gridHelper.material.color.set(0x1a2a4a);
+  scene.add(gridHelper);
+  
+  initializeNetworkNodes();
+  initializeTargets();
+  
+  window.addEventListener('resize', () => {
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+  });
+  
+  setupWaterfallDimensions();
+  animateSystemCore();
+}
+
+function initializeNetworkNodes() {
+  const nodesData = [
+    { id: "HUB", name: "Command Hub", pos: {x: 0, y: 0, z: 0} },
+    { id: "NODE-01", name: "ESP32 Node", pos: {x: -30, y: 0, z: -35} },
+    { id: "NODE-02", name: "RPi Relay", pos: {x: 45, y: 0, z: -15} },
+    { id: "NODE-03", name: "Jetson Edge", pos: {x: -15, y: 0, z: 50} }
+  ];
+  
+  nodesData.forEach(node => {
+    const geometry = new THREE.IcosahedronGeometry(3, 3);
+    const material = new THREE.MeshStandardMaterial({ color: 0x00ff66, emissive: 0x00aa44 });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.copy(node.pos);
+    mesh.userData = { isNode: true, ...node };
+    scene.add(mesh);
+    visualNodesMap.set(node.id, mesh);
+  });
+}
+
+function initializeTargets() {
+  const targets = [
+    { id: "TARGET-01", name: "RF Signature Alpha", pos: {x: 20, y: 15, z: -20}, color: 0x00f0ff },
+    { id: "TARGET-02", name: "Dynamic Anomaly", pos: {x: -35, y: 20, z: 30}, color: 0xa122ff }
+  ];
+  
+  targets.forEach(target => {
+    const geometry = new THREE.OctahedronGeometry(4, 2);
+    const material = new THREE.MeshStandardMaterial({ color: target.color, emissive: target.color, emissiveIntensity: 0.5 });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.copy(target.pos);
+    mesh.userData = { isTarget: true, ...target };
+    scene.add(mesh);
+    visualTargetsMap.set(target.id, mesh);
+  });
+}
+
+let timeTicks = 0;
+function animateSystemCore() {
+  requestAnimationFrame(animateSystemCore);
+  timeTicks += 0.007;
+  
+  if (controls) controls.update();
+  
+  // Animate targets
+  visualTargetsMap.forEach((mesh, id) => {
+    mesh.rotation.x += 0.01;
+    mesh.rotation.y += 0.015;
+    mesh.position.y += Math.sin(timeTicks * 2) * 0.02;
+  });
+  
+  renderSpectrogramWaterfallTick();
+  
+  if (renderer && scene && camera) {
+    renderer.render(scene, camera);
+  }
+}
+
+// ============================================================================
+// ARP SCANNER FUNCTIONS
+// ============================================================================
+function startARPScan() {
+  const resultsDiv = document.getElementById('arp-results');
+  resultsDiv.innerHTML = '[*] Starting ARP scan on 192.168.0.0/24...\n[*] Sending ARP requests...\n';
+  
+  setTimeout(() => {
+    const devices = [
+      { ip: '192.168.0.1', mac: 'AA:BB:CC:DD:EE:FF', vendor: 'Gateway Router' },
+      { ip: '192.168.0.15', mac: '24:4B:03:AA:BC:11', vendor: 'ESP32-DevKit' },
+      { ip: '192.168.0.42', mac: 'DE:AD:BE:EF:00:11', vendor: 'Raspberry Pi' },
+      { ip: '192.168.0.99', mac: '00:04:4B:A1:B2:C3', vendor: 'NVIDIA Jetson' },
+      { ip: '192.168.0.108', mac: 'CC:AA:BB:DD:11:22', vendor: 'Unknown Device' }
+    ];
+    
+    let output = '[+] ARP scan complete! Found ' + devices.length + ' devices:\n\n';
+    
+    devices.forEach((dev, idx) => {
+      output += `[${idx + 1}] IP: ${dev.ip} | MAC: ${dev.mac}\n    Vendor: ${dev.vendor}\n`;
+    });
+    
+    resultsDiv.innerHTML = output;
+    
+    // Add clickable devices
+    const resultsHTML = resultsDiv.innerHTML;
+    resultsDiv.innerHTML = '';
+    
+    devices.forEach(dev => {
+      const deviceEl = document.createElement('div');
+      deviceEl.className = 'arp-device';
+      deviceEl.textContent = `${dev.ip} [${dev.mac}] - ${dev.vendor}`;
+      deviceEl.onclick = () => selectARPDevice(dev, deviceEl);
+      resultsDiv.appendChild(deviceEl);
+    });
+  }, 1200);
+}
+
+function selectARPDevice(device, element) {
+  document.querySelectorAll('.arp-device').forEach(el => el.classList.remove('selected'));
+  element.classList.add('selected');
+  
+  const infoDiv = document.getElementById('device-info');
+  infoDiv.innerHTML = `
+<strong>IP Address:</strong> ${device.ip}
+<strong>MAC Address:</strong> ${device.mac}
+<strong>Vendor:</strong> ${device.vendor}
+<strong>Hostname:</strong> [scanning...]
+<strong>Services:</strong> HTTP (80), HTTPS (443), SSH (22)
+<strong>Open Ports:</strong> 22, 80, 443, 8080
+<strong>OS Fingerprint:</strong> Linux / embedded
+<strong>Last Seen:</strong> 2 seconds ago
+  `;
+}
+
+function clearARPResults() {
+  document.getElementById('arp-results').innerHTML = '[*] Ready for network scan...';
+  document.getElementById('device-info').innerHTML = 'Select device to analyze';
+}
+
+function probeDevice() {
+  const infoDiv = document.getElementById('device-info');
+  infoDiv.innerHTML += '\n\n[*] Probing device...\n[+] Response received\n[+] Service detection complete';
+}
+
+// ============================================================================
+// SDR FUNCTIONS
+// ============================================================================
+function startFrequencyScan() {
+  const canvas = document.getElementById('freq-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.parentElement.clientWidth;
+  canvas.height = canvas.parentElement.clientHeight - 40;
+  
+  // Draw frequency spectrum
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  ctx.strokeStyle = '#1a2a4a';
+  ctx.beginPath();
+  for (let i = 0; i <= 10; i++) {
+    const x = (canvas.width / 10) * i;
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+  }
+  ctx.stroke();
+  
+  // Draw signal peaks
+  ctx.fillStyle = '#ff2233';
+  for (let i = 0; i < canvas.width; i += 4) {
+    const height = Math.random() * 30 + Math.sin(i / 50) * 40;
+    ctx.fillRect(i, canvas.height - height, 3, height);
+  }
+  
+  // Highlight active frequencies
+  ctx.fillStyle = 'rgba(0,255,102,0.3)';
+  ctx.fillRect(canvas.width * 0.2, canvas.height * 0.5, canvas.width * 0.15, canvas.height * 0.4);
+  ctx.fillRect(canvas.width * 0.6, canvas.height * 0.3, canvas.width * 0.2, canvas.height * 0.5);
+}
+
+function analyzeSignal() {
+  const signalList = document.getElementById('signal-list');
+  signalList.innerHTML += `
+<div class="frequency-row" style="border-color: #00ff66; background: rgba(0,255,102,0.1);">
+  <span>Unknown Signal</span>
+  <div class="signal-strength">
+    <span>-67dB</span>
+    <div class="strength-bar"><div class="strength-fill" style="width:25%;"></div></div>
+  </div>
+</div>
+  `;
+}
+
+// ============================================================================
+// WATERFALL SPECTROGRAM
+// ============================================================================
+const canvasWF = document.getElementById('canvas-waterfall');
+const ctxWF = canvasWF.getContext('2d');
+let waterfallRows = [];
+
+function setupWaterfallDimensions() {
+  canvasWF.width = canvasWF.parentElement.clientWidth;
+  canvasWF.height = canvasWF.parentElement.clientHeight - 50;
+}
+
+function renderSpectrogramWaterfallTick() {
+  if (!canvasWF.width) return;
+  
+  let newRow = [];
+  for (let i = 0; i < canvasWF.width; i++) {
+    let baselineNoise = Math.random() * 45;
+    if (i % 60 === 0 && Math.random() > 0.6) baselineNoise = 180 + Math.random() * 75;
+    if (Math.abs(i - (Math.sin(timeTicks * 2) * (canvasWF.width/3) + (canvasWF.width/2))) < 8) baselineNoise = 200 + Math.random() * 55;
+    newRow.push(baselineNoise);
+  }
+  
+  waterfallRows.unshift(newRow);
+  if (waterfallRows.length > canvasWF.height) waterfallRows.pop();
+  
+  ctxWF.clearRect(0, 0, canvasWF.width, canvasWF.height);
+  for (let y = 0; y < waterfallRows.length; y++) {
+    let rowData = waterfallRows[y];
+    for (let x = 0; x < rowData.length; x++) {
+      let val = rowData[x];
+      if (val > 150) {
+        ctxWF.fillStyle = `rgb(${val}, ${Math.floor(val*0.1)}, ${Math.floor(val*0.2)})`;
+      } else if (val > 80) {
+        ctxWF.fillStyle = `rgb(0, ${val}, ${val})`;
+      } else {
+        ctxWF.fillStyle = `rgb(0, ${Math.floor(val*0.4)}, 0)`;
+      }
+      ctxWF.fillRect(x, y, 1, 1);
+    }
+  }
+}
+
+// ============================================================================
+// NODE CASCADE FUNCTION
+// ============================================================================
+function cascadeNewRemoteNode() {
+  const logsDiv = document.getElementById('mesh-link-logs');
+  const newNodeNum = Math.floor(Math.random() * 1000) + 100;
+  logsDiv.innerHTML += `[+] NODE-${newNodeNum} cascade initiated\n[*] Link established at 2.4GHz\n[✓] Encrypted connection secured\n`;
+  logsDiv.scrollTop = logsDiv.scrollHeight;
+}
+
+// Initialize visualizer on load
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    if (document.querySelector('#visualizer-tab').classList.contains('active')) {
+      window.visualizerInitialized = true;
+      initializeVisualizer();
+    }
+  }, 100);
+});
+</script>
+
+</body>
+</html>
